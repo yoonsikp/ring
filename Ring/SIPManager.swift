@@ -525,16 +525,32 @@ final class SIPManager: ObservableObject {
             lastError = "Call dropped: network problem"
             endCall()
         case .Error:
-            if call.dir == .Incoming {
-                lastError = "Incoming call from \(remote) failed: \(message.isEmpty ? "unknown reason" : message)"
-            } else {
-                lastError = message.isEmpty ? "Call failed" : message
-            }
+            let reason = Self.callFailure(call.errorInfo, message: message)
+            lastError = call.dir == .Incoming ? "Incoming call from \(remote) failed: \(reason)"
+                                              : "Call failed: \(reason)"
             endCall()
         case .End, .Released:
             endCall()
         default:
             break
+        }
+    }
+
+    /// Readable reason for a failed call, with the SIP code, e.g. "forbidden (403). Check the number."
+    private static func callFailure(_ info: ErrorInfo?, message: String) -> String {
+        let code = info?.protocolCode ?? 0
+        let phrase = (info?.phrase).flatMap { $0.isEmpty ? nil : $0 } ?? (message.isEmpty ? "unknown error" : message)
+        let codeText = code > 0 ? " (\(code))" : ""
+        switch code {
+        case 403: return "forbidden\(codeText). Check the number, or that your account may call it."
+        case 404: return "number not found\(codeText). Check the number."
+        case 480: return "not available right now\(codeText)."
+        case 484: return "incomplete number\(codeText)."
+        case 486, 600: return "busy\(codeText)."
+        case 488, 606: return "not acceptable\(codeText): no common codec or encryption."
+        case 503: return "service unavailable\(codeText). Try again shortly."
+        case 603: return "declined\(codeText)."
+        default: return phrase.prefix(1).lowercased() + phrase.dropFirst() + codeText
         }
     }
 
