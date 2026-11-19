@@ -145,6 +145,21 @@ private struct CallSection: View {
                 DialField(text: $target, placeholder: "Number or SIP address",
                           focusRequest: focusRequest, onSubmit: call,
                           format: { PhoneFormat.partial($0) })
+                    .overlay(alignment: .trailing) {
+                        if !target.isEmpty {
+                            Button {
+                                target = ""
+                                focusRequest += 1 // keep typing straight away
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Clear")
+                            .padding(.trailing, 6)
+                        }
+                    }
                 // Regular-size button (same corner shape as Hang up), padded out to the field's height.
                 Button(action: call) {
                     Image(systemName: "phone.fill").frame(width: 22, height: 19)
@@ -564,25 +579,35 @@ private final class PaddedTextField: NSTextField {
 }
 
 private final class PaddedTextFieldCell: NSTextFieldCell {
-    private var inset: CGFloat {
+    /// Extra room between the border and the text (macOS 26's field already has enough).
+    private var leftInset: CGFloat {
         if #available(macOS 26.0, *) { return 0 }
-        return 1
+        return 2
+    }
+    /// Same on the right, plus room for the clear (x) button so text never runs under it.
+    private var rightInset: CGFloat { leftInset + 16 }
+
+    private func padded(_ rect: NSRect) -> NSRect {
+        var r = rect
+        r.origin.x += leftInset
+        r.size.width = max(0, r.size.width - leftInset - rightInset)
+        return r
     }
 
     override func drawingRect(forBounds rect: NSRect) -> NSRect {
-        super.drawingRect(forBounds: rect).insetBy(dx: inset, dy: 0)
+        padded(super.drawingRect(forBounds: rect))
     }
 
     // Keep the caret / editing area in the same place as the drawn text.
     override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
                        delegate: Any?, event: NSEvent?) {
-        super.edit(withFrame: rect.insetBy(dx: inset, dy: 0), in: controlView, editor: textObj,
+        super.edit(withFrame: padded(rect), in: controlView, editor: textObj,
                    delegate: delegate, event: event)
     }
 
     override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
                          delegate: Any?, start selStart: Int, length selLength: Int) {
-        super.select(withFrame: rect.insetBy(dx: inset, dy: 0), in: controlView, editor: textObj,
+        super.select(withFrame: padded(rect), in: controlView, editor: textObj,
                      delegate: delegate, start: selStart, length: selLength)
     }
 }
