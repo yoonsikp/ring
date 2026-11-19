@@ -50,6 +50,7 @@ final class SIPManager: ObservableObject {
     private var iterateTimer: Timer?
     /// nil until first set; true while a call is ringing/active or we're registering.
     private var isBusy: Bool?
+    private var ticksSinceSync = 0
     /// The single account we created; events from previously removed accounts are ignored.
     private var activeAccount: Account?
     /// Keeps App Nap from throttling us, so we keep the SIP connection alive and hear incoming calls.
@@ -167,7 +168,16 @@ final class SIPManager: ObservableObject {
 
         iterateTimer?.invalidate()
         let timer = Timer(timeInterval: busy ? 0.02 : 0.2, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.core.iterate() }
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.core.iterate()
+                // About every 5 s, check the status shown still matches the account's real state.
+                self.ticksSinceSync += 1
+                if self.ticksSinceSync >= (busy ? 250 : 25) {
+                    self.ticksSinceSync = 0
+                    self.syncRegistration()
+                }
+            }
         }
         timer.tolerance = busy ? 0.002 : 0.05
         RunLoop.main.add(timer, forMode: .common) // .common: keeps running while the menu is open
@@ -410,6 +420,29 @@ final class SIPManager: ObservableObject {
         }
     }
 
+    /// Make the shown status match the account's actual registration state, in case a state
+    /// change callback was missed (e.g. around sleep/wake): "Disconnected" must really mean it.
+    private func syncRegistration() {
+        guard let account = activeAccount else {
+            if registration != .disconnected, !accountApplyPending { registration = .disconnected }
+            return
+        }
+        let actual: Registration
+        switch account.state {
+        case .Ok, .Refreshing: actual = .connected
+        case .Progress: actual = .connecting
+        case .Failed:
+            if case .failed = registration { return } // keep the existing message
+            actual = .failed(Self.registrationFailure(account.errorInfo, message: ""))
+        case .Cleared, .None: actual = .disconnected
+        default: return
+        }
+        if actual != registration {
+            registration = actual
+            if actual == .connected { reconnectingAfterWake = false }
+        }
+    }
+
     // MARK: - Calls
 
     /// The one call the UI is showing. Events from any other call (an old call's late
@@ -497,6 +530,15 @@ final class SIPManager: ObservableObject {
     }
 
     private func handleCall(_ call: Call, state: Call.State, message: String) {
+        if state == .IncomingReceived {
+            // Switched off (or no account): don't ring. A server can still route a call to us
+            // if our un-registration never reached it.
+            if !wantsConnection || activeAccount == nil {
+                try? call.decline(reason: .TemporarilyUnavailable)
+                return
+            }
+            syncRegistration() // a call arriving means the status should reflect the real state
+        }
         // Adopt a new call only when none is being shown; otherwise ignore other calls.
         if trackedCall == nil, callPhase == .idle,
            [.IncomingReceived, .IncomingEarlyMedia, .OutgoingInit, .OutgoingProgress].contains(state) {
