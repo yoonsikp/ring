@@ -24,9 +24,11 @@ private struct StatusIcon: View {
     var body: some View {
         // The menu bar label ignores SwiftUI font modifiers, so the call duration is drawn
         // into the image with a monospaced-digit font to keep its width steady.
-        Image(nsImage: clock.elapsed.map { Self.image(for: sip.statusSymbol, time: formatCallDuration($0)) }
-                       ?? Self.image(for: sip.statusSymbol))
-        .accessibilityLabel(sip.statusText)
+        Image(nsImage: sip.showsAnswerButton
+              ? Self.answerButton
+              : clock.elapsed.map { Self.image(for: sip.statusSymbol, time: formatCallDuration($0)) }
+                ?? Self.image(for: sip.statusSymbol))
+        .accessibilityLabel(sip.showsAnswerButton ? "Answer incoming call" : sip.statusText)
         .transaction { $0.animation = nil } // never animate the status item
     }
 
@@ -34,6 +36,28 @@ private struct StatusIcon: View {
     /// never changes size (the SF Symbols for each state have different widths).
     private static var cache: [String: NSImage] = [:]
     private static let canvas = NSSize(width: 20, height: 16)
+
+    /// Incoming call: a white phone on a green rounded rectangle, twice the icon's width, so the
+    /// menu bar item looks like an answer button. Not a template image, so it keeps its colours.
+    private static let answerButton: NSImage = {
+        let size = NSSize(width: canvas.width * 2, height: 18)
+        let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
+        let symbol = NSImage(systemSymbolName: "phone.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(config)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor.systemGreen.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6).fill()
+            if let symbol {
+                let s = symbol.size
+                symbol.draw(in: NSRect(x: (rect.width - s.width) / 2, y: (rect.height - s.height) / 2,
+                                       width: s.width, height: s.height))
+            }
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }()
 
     /// Icon followed by the call duration (m:ss / h:mm:ss), as one template image.
     private static func image(for name: String, time: String) -> NSImage {

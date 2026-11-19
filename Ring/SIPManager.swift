@@ -24,6 +24,8 @@ final class SIPManager: ObservableObject {
     @Published private(set) var settings = AccountSettings.load()
     @Published private(set) var audio = AudioSettings.load()
     @Published private(set) var network = NetworkSettings.load()
+    /// Whether the menu bar popover is on screen (reported by MenuView).
+    @Published private(set) var popoverOpen = false
     /// Call duration for the menu bar (ticks separately from the rest of the UI).
     let clock = CallClock()
     /// User intent: whether we *want* to be registered (the menu's Connect/Disconnect toggle).
@@ -438,6 +440,22 @@ final class SIPManager: ObservableObject {
         } else {
             try? call.terminate()
         }
+    }
+
+    /// While a call is ringing and the popover is closed, the menu bar icon is a green
+    /// "answer" button; opening the popover by clicking it answers the call.
+    func popoverVisibilityChanged(_ open: Bool) {
+        let wasOpen = popoverOpen
+        popoverOpen = open
+        if open, !wasOpen, case .incoming = callPhase {
+            answer()
+        }
+    }
+
+    /// The menu bar shows the green answer button (rather than the normal icon).
+    var showsAnswerButton: Bool {
+        if case .incoming = callPhase, !popoverOpen { return true }
+        return false
     }
 
     func toggleMute() {

@@ -34,7 +34,9 @@ struct MenuView: View {
         // account is configured the account form is shown regardless, so first-run setup is kept.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification)) { note in
             guard let window, note.object as? NSWindow === window else { return }
-            if window.occlusionState.contains(.visible) {
+            let visible = window.occlusionState.contains(.visible)
+            sip.popoverVisibilityChanged(visible) // answers a ringing call if opened via the green icon
+            if visible {
                 openCount += 1
             } else {
                 page = .main
