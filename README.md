@@ -46,11 +46,9 @@ time you place or answer a call.
 
 | File | Role |
 |---|---|
-| `Ring/RingApp.swift` | App entry point, app delegate, status text/symbol |
-| `Ring/StatusController.swift` | Menu bar item, drop-down panel (open/close/position), icon + call timer drawing |
-| `Ring/CallClock.swift` | Per-second call timer for the menu bar |
+| `Ring/RingApp.swift` | `MenuBarExtra` scene, menu-bar icon, app delegate |
 | `Ring/SIPManager.swift` | Wraps the liblinphone `Core`: account, registration, calls, mute, DTMF |
-| `Ring/MenuView.swift` | Panel UI: status, dialer, call controls, keypad, account and settings pages |
+| `Ring/MenuView.swift` | Popover UI: status, dialer, call controls, keypad, account and settings pages |
 | `Ring/AccountSettings.swift` | Account settings in UserDefaults, password in Keychain |
 | `Ring/AudioSettings.swift` | Echo cancellation, jitter buffer, volume gain, codec selection |
 | `Ring/NetworkSettings.swift` | IPv6, STUN/TURN server, ICE, TURN credentials |
