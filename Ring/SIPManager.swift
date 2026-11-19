@@ -135,11 +135,14 @@ final class SIPManager: ObservableObject {
 
     private func applyAudio() {
         core.echoCancellationEnabled = audio.echoCancellation
+        // Local CN generation; the SDK docs say this needs a G.729B-enabled build, so it may be a no-op.
+        core.genericComfortNoiseEnabled = audio.comfortNoise
         let allowed = Set(audio.enabledCodecs.map { $0.rawValue.uppercased() })
         for pt in core.audioPayloadTypes {
             let mime = pt.mimeType.uppercased()
             // telephone-event carries DTMF (RFC 2833); it isn't a voice codec, so keep it on.
-            let on = mime == "TELEPHONE-EVENT" || allowed.contains(mime)
+            // CN is RFC 3389 comfort noise, controlled by its own setting.
+            let on = mime == "TELEPHONE-EVENT" || (mime == "CN" && audio.comfortNoise) || allowed.contains(mime)
             _ = pt.enable(enabled: on)
         }
     }

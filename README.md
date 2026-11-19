@@ -12,7 +12,7 @@ which handles SIP, TLS, SRTP and audio.
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Connect/disconnect switch in the popover
 - Settings: echo cancellation, play tones for keys the caller presses (off by default), and codecs —
-  only PCMU, PCMA, G.722 and GSM can be enabled; every other codec is disabled (telephone-event stays on for DTMF)
+  only PCMU, PCMA, G.722 and GSM can be enabled; every other codec is disabled (telephone-event stays on for DTMF); optional comfort noise (CN, RFC 3389)
 
 Requires macOS 13+.
 
