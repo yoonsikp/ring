@@ -146,6 +146,7 @@ private struct CallSection: View {
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 15))
                     .focused($numberFocused)
+                    .staticFocusRing(numberFocused)
                     .onSubmit(call)
                 Button(action: call) { Image(systemName: "phone.fill") }
                     .buttonStyle(.borderedProminent).tint(.callGreen)
@@ -452,5 +453,26 @@ private struct NetworkView: View {
             }
         }
         .onAppear { draft = sip.network }
+    }
+}
+
+// MARK: - Focus ring
+
+private extension View {
+    /// Replace the system's animated focus ring with a plain one that just appears.
+    /// (focusEffectDisabled is macOS 14+; on macOS 13 the system ring is kept.)
+    @ViewBuilder
+    func staticFocusRing(_ focused: Bool) -> some View {
+        if #available(macOS 14.0, *) {
+            self.focusEffectDisabled()
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(Color.accentColor.opacity(focused ? 0.7 : 0), lineWidth: 2)
+                        .allowsHitTesting(false)
+                )
+                .transaction { $0.animation = nil }
+        } else {
+            self
+        }
     }
 }
