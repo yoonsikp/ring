@@ -545,6 +545,20 @@ private struct DialField: NSViewRepresentable {
         init(_ parent: DialField) { self.parent = parent }
         func syncPrevious(_ text: String) { previous = text }
 
+        /// Ring's menu bar icon (the app has a single status item).
+        static func statusItemButton() -> NSStatusBarButton? {
+            func find(_ view: NSView?) -> NSStatusBarButton? {
+                guard let view else { return nil }
+                if let button = view as? NSStatusBarButton { return button }
+                for sub in view.subviews { if let b = find(sub) { return b } }
+                return nil
+            }
+            for window in NSApp.windows where window.className.contains("StatusBarWindow") {
+                if let button = find(window.contentView) { return button }
+            }
+            return nil
+        }
+
         private var previous = ""
 
         func controlTextDidChange(_ note: Notification) {
@@ -567,11 +581,16 @@ private struct DialField: NSViewRepresentable {
                 parent.onSubmit()
                 return true
             }
-            // Escape: the field editor swallows it, so close the popover window ourselves
-            // (forwarding the key press to the window didn't close it).
+            // Escape: the field editor swallows it. Close the popover the same way a click on the
+            // menu bar icon does, so MenuBarExtra's own state (and the icon highlight) stays in
+            // sync; closing the window directly left the icon selected and needing two clicks.
             if selector == #selector(NSResponder.cancelOperation(_:)), let window = control.window {
                 window.makeFirstResponder(nil)
-                window.close()
+                if let button = Self.statusItemButton() {
+                    button.performClick(nil)
+                } else {
+                    window.close() // fallback
+                }
                 return true
             }
             return false
