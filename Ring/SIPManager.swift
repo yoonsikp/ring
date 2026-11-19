@@ -29,13 +29,37 @@ final class SIPManager: ObservableObject {
     private var iterateTimer: Timer?
     /// The single account we created; events from previously removed accounts are ignored.
     private var activeAccount: Account?
+    /// Keeps App Nap from throttling us, so we keep the SIP connection alive and hear incoming calls.
+    private var activity: NSObjectProtocol?
+
+    /// liblinphone logs go here (~/Library/Logs/Ring).
+    static let logDirectory: URL = FileManager.default
+        .urls(for: .libraryDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Logs/Ring", isDirectory: true)
 
     init() {
+        try? FileManager.default.createDirectory(at: Self.logDirectory, withIntermediateDirectories: true)
+        Core.setLogCollectionPath(path: Self.logDirectory.path)
+        Core.enableLogCollection(state: .Enabled)
+        LoggingService.Instance.logLevel = .Message
+
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
+            reason: "Listening for incoming SIP calls")
+
         do {
             // No config path: nothing (in particular no password) is persisted by liblinphone.
             core = try Factory.Instance.createCore(configPath: nil, factoryConfigPath: nil, systemContext: nil)
         } catch {
             fatalError("Could not create liblinphone core: \(error)")
+        }
+
+        // Random local ports (like the Linphone apps) so we never fight another SIP app for 5060.
+        if let transports = try? Factory.Instance.createTransports() {
+            transports.udpPort = -1
+            transports.tcpPort = -1
+            transports.tlsPort = -1
+            try? core.setTransports(newValue: transports)
         }
 
         core.maxCalls = 1                      // one call at a time; extra INVITEs get 486 Busy
@@ -71,6 +95,7 @@ final class SIPManager: ObservableObject {
         try? core.terminateAllCalls()
         core.stop()
         iterateTimer?.invalidate()
+        if let activity { ProcessInfo.processInfo.endActivity(activity) }
     }
 
     // MARK: - Account
@@ -211,7 +236,11 @@ final class SIPManager: ObservableObject {
             if case .active = callPhase { break }
             callPhase = .active(remote: remote, since: Date())
         case .Error:
-            lastError = message.isEmpty ? "Call failed" : message
+            if call.dir == .Incoming {
+                lastError = "Incoming call from \(remote) failed: \(message.isEmpty ? "unknown reason" : message)"
+            } else {
+                lastError = message.isEmpty ? "Call failed" : message
+            }
             endCall()
         case .End, .Released:
             endCall()

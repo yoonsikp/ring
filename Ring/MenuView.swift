@@ -39,6 +39,8 @@ private struct MainPage: View {
 
             HStack {
                 Button("Account…", action: showAccount)
+                Button("Logs") { NSWorkspace.shared.open(SIPManager.logDirectory) }
+                    .help("Open the liblinphone log folder")
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
             }
