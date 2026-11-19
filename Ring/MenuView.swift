@@ -276,7 +276,6 @@ private struct SettingsView: View {
                         if on { draft.enabledCodecs.insert(codec) } else { draft.enabledCodecs.remove(codec) }
                     }))
             }
-            Toggle("Comfort noise (CN, RFC 3389)", isOn: $draft.comfortNoise)
             Text(draft.enabledCodecs.isEmpty ? "Enable at least one codec."
                                              : "All other codecs are disabled. Changes apply from the next call.")
                 .font(.caption).foregroundStyle(draft.enabledCodecs.isEmpty ? Color.orange : Color.secondary)
