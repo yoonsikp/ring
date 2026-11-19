@@ -34,6 +34,19 @@ For a build that runs on both, use `make universal`. `make size` shows what take
 Or run `make project` and open `Ring.xcodeproj` in Xcode. Swift Package Manager downloads the
 linphone SDK (`linphonesw`, pinned to 5.5.41) and PhoneNumberKit (4.3.0) on the first build.
 
+### Smallest build (minimal SDK from source)
+
+The prebuilt linphone SDK includes video, a noise-suppression neural network, group chat and
+more, which Ring doesn't use. To build a minimal SDK (audio only, this Mac's architecture):
+
+```bash
+brew install cmake ninja doxygen yasm nasm
+/usr/bin/python3 -m pip install --user pystache six
+make sdk      # once; slow (clones and builds the SDK into build/)
+make small    # build and run Ring against it
+make size
+```
+
 ### Logging
 
 Logging is off normally (logs contain the call's SRTP keys). To write detailed liblinphone logs to
