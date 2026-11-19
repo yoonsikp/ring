@@ -213,6 +213,7 @@ final class SIPManager: ObservableObject {
     func dial(_ input: String) {
         let target = input.trimmingCharacters(in: .whitespaces)
         guard !target.isEmpty, callPhase == .idle else { return }
+        lastError = nil // a new attempt clears the previous call's error
         guard registration == .connected else { lastError = "Not connected"; return }
 
         requestMicAccess { [weak self] granted in
@@ -280,10 +281,12 @@ final class SIPManager: ObservableObject {
         let remote = call.remoteAddress.map(Self.displayName) ?? "Unknown"
         switch state {
         case .IncomingReceived, .IncomingEarlyMedia:
+            if callPhase == .idle { lastError = nil }
             callPhase = .incoming(remote: remote)
         case .OutgoingInit, .OutgoingProgress, .OutgoingRinging, .OutgoingEarlyMedia:
             callPhase = .outgoing(remote: remote)
         case .Connected, .StreamsRunning:
+            lastError = nil
             if case .active = callPhase { break }
             callPhase = .active(remote: remote, since: Date())
         case .Error:
