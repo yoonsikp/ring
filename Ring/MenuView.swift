@@ -160,9 +160,8 @@ private struct CallSection: View {
             .onChange(of: openCount) { _ in focusRequest += 1 }
 
         case .incoming(let remote):
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Incoming call", systemImage: "phone.arrow.down.left").font(.subheadline)
-                Text(remote).font(.title3).lineLimit(1).truncationMode(.middle)
+            VStack(alignment: .leading, spacing: 10) {
+                callHeader(remote) { Text("Incoming call").foregroundStyle(.secondary) }
                 HStack {
                     Button("Decline", role: .destructive) { sip.hangUp() }
                         .buttonStyle(.bordered)
@@ -174,17 +173,14 @@ private struct CallSection: View {
             }
 
         case .outgoing(let remote):
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Calling…", systemImage: "phone.arrow.up.right").font(.subheadline)
-                Text(remote).font(.title3).lineLimit(1).truncationMode(.middle)
+            VStack(alignment: .leading, spacing: 10) {
+                callHeader(remote) { Text("Calling…").foregroundStyle(.secondary) }
                 HangUpButton()
             }
 
         case .active(let remote, let since):
             VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(remote).font(.title3).lineLimit(1).truncationMode(.middle)
-                    Spacer()
+                callHeader(remote) {
                     TimelineView(.periodic(from: since, by: 1)) { ctx in
                         Text(formatCallDuration(Int(ctx.date.timeIntervalSince(since))))
                             .monospacedDigit().foregroundStyle(.secondary)
@@ -212,6 +208,16 @@ private struct CallSection: View {
                 .buttonStyle(.bordered)
                 if showKeypad { Keypad() }
             }
+        }
+    }
+
+    /// Same top row in every call state: the number on the left, the state ("Incoming call",
+    /// "Calling…") or the timer on the right. Keeps the number and the buttons below in place.
+    private func callHeader<Trailing: View>(_ remote: String, @ViewBuilder trailing: () -> Trailing) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(remote).font(.title3).lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: 8)
+            trailing()
         }
     }
 
