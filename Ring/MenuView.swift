@@ -93,10 +93,12 @@ private struct StatusHeader: View {
     @EnvironmentObject private var sip: SIPManager
 
     private var dotColor: Color {
+        // Yellow only while re-checking after wake; otherwise straight red <-> green.
+        if sip.reconnectingAfterWake { return .yellow }
         if !sip.networkReachable && sip.wantsConnection { return .red }
         switch sip.registration {
         case .connected: return .green
-        case .connecting: return .yellow
+        case .connecting: return .red
         case .disconnected: return .gray
         case .failed: return .red
         }

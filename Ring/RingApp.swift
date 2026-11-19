@@ -76,6 +76,7 @@ extension SIPManager {
     }
 
     var statusText: String {
+        if reconnectingAfterWake { return "Reconnecting…" }
         if !networkReachable && wantsConnection && settings.isComplete { return "No network" }
         switch registration {
         case .connected: return "Connected"

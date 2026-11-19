@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import AVFoundation
 import linphonesw
 
@@ -27,6 +28,11 @@ final class SIPManager: ObservableObject {
     /// liblinphone's own network monitoring (it closes connections when the network goes and
     /// reconnects / re-registers by itself when it comes back).
     @Published private(set) var networkReachable = true
+    /// True from waking from sleep until we're registered again (or 30 s pass). The only time
+    /// the status dot is yellow.
+    @Published private(set) var reconnectingAfterWake = false
+    private var wakeObserver: NSObjectProtocol?
+    private var wakeGeneration = 0
     /// Account changes (disconnect switch, new settings) wait until the current call has ended.
     private var accountApplyPending = false
 
@@ -105,6 +111,12 @@ final class SIPManager: ObservableObject {
             }
         )
         core.addDelegate(delegate: delegate)
+
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.handleWake() }
+        }
 
         // We drive the core ourselves; the rate depends on whether a call is going on.
         core.autoIterateEnabled = false
@@ -228,7 +240,28 @@ final class SIPManager: ObservableObject {
             return
         }
         accountApplyPending = false
+        reconnectingAfterWake = false
         applyAccount()
+    }
+
+    /// After sleep the TLS connection to the server is almost certainly dead, but nothing may
+    /// notice until the next keep-alive fails. Drop the connections and re-register right away.
+    private func handleWake() {
+        guard wantsConnection, settings.isComplete, activeAccount != nil else { return }
+        reconnectingAfterWake = true
+        wakeGeneration += 1
+        let generation = wakeGeneration
+        if trackedCall == nil {
+            core.networkReachable = false // closes all connections
+            core.networkReachable = true  // reconnects and re-registers
+        } else {
+            core.refreshRegisters()       // don't tear down a call in progress
+        }
+        // Give Wi-Fi time to rejoin; stop showing "Reconnecting…" after 30 s regardless.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+            guard let self, self.wakeGeneration == generation else { return }
+            self.reconnectingAfterWake = false
+        }
     }
 
     private func applyPendingAccount() {
@@ -299,7 +332,9 @@ final class SIPManager: ObservableObject {
     private func handleRegistration(_ account: Account, state: RegistrationState, message: String) {
         guard let active = activeAccount, account === active else { return }
         switch state {
-        case .Ok: registration = .connected
+        case .Ok:
+            registration = .connected
+            reconnectingAfterWake = false
         case .Progress: registration = .connecting
         case .Failed: registration = .failed(Self.registrationFailure(account.errorInfo, message: message))
         case .Cleared, .None: registration = .disconnected
