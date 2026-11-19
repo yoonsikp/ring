@@ -10,6 +10,9 @@ struct MenuView: View {
     @State private var window: NSWindow?
     /// Bumped each time the popover opens, so the home page can focus the number field.
     @State private var openCount = 0
+    /// The number being dialled. Kept here (not in the home page) so it survives
+    /// going to Account / Audio / Network and back.
+    @State private var dialTarget = ""
 
     var body: some View {
         Group {
@@ -20,7 +23,7 @@ struct MenuView: View {
             } else if page == .network {
                 NetworkView(onDone: { page = .main })
             } else {
-                MainPage(show: { page = $0 }, openCount: openCount)
+                MainPage(show: { page = $0 }, openCount: openCount, target: $dialTarget)
             }
         }
         .padding(14)
@@ -63,6 +66,7 @@ private struct MainPage: View {
     @EnvironmentObject private var sip: SIPManager
     let show: (MenuView.Page) -> Void
     let openCount: Int
+    @Binding var target: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -73,7 +77,7 @@ private struct MainPage: View {
             }
 
             Divider()
-            CallSection(openCount: openCount)
+            CallSection(openCount: openCount, target: $target)
             Divider()
 
             HStack {
@@ -130,7 +134,7 @@ private struct StatusHeader: View {
 private struct CallSection: View {
     @EnvironmentObject private var sip: SIPManager
     let openCount: Int
-    @State private var target = ""
+    @Binding var target: String
     @State private var showKeypad = false
     @FocusState private var numberFocused: Bool
 
