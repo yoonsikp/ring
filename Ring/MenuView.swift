@@ -213,18 +213,19 @@ private struct AccountView: View {
                 SecureField("", text: $draft.password).textFieldStyle(.roundedBorder)
             }
 
-            DisclosureGroup("Username and server", isExpanded: $showAdvanced) {
+            DisclosureGroup(isExpanded: $showAdvanced) {
                 VStack(alignment: .leading, spacing: 10) {
                     field("Username (optional)", "Defaults to the user part of the address", $draft.username)
                     field("Server (optional)", "host[:port], defaults to the address's domain", $draft.server)
+                    Toggle("Use TLS Signalling", isOn: $draft.useTLS)
                 }
                 .padding(.top, 6)
+            } label: {
+                // Make the text clickable too, not just the arrow.
+                Text("Advanced Options...")
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation { showAdvanced.toggle() } }
             }
-
-            Toggle("Use TLS", isOn: $draft.useTLS)
-            Text(draft.useTLS ? "Signalling over TLS; audio is always SRTP."
-                              : "Warning: without TLS the SRTP keys are sent in the clear.")
-                .font(.caption).foregroundStyle(draft.useTLS ? Color.secondary : Color.orange)
 
             HStack {
                 if sip.settings.isComplete {
@@ -244,8 +245,8 @@ private struct AccountView: View {
         }
         .onAppear {
             draft = sip.settings
-            // Start expanded if either optional field is in use, so it isn't hidden.
-            showAdvanced = !draft.username.isEmpty || !draft.server.isEmpty
+            // Start expanded if any advanced option differs from its default, so it isn't hidden.
+            showAdvanced = !draft.username.isEmpty || !draft.server.isEmpty || !draft.useTLS
         }
     }
 
