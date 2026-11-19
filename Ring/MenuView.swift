@@ -136,19 +136,15 @@ private struct CallSection: View {
     let openCount: Int
     @Binding var target: String
     @State private var showKeypad = false
-    @FocusState private var numberFocused: Bool
+    /// Bumped to ask the number field to take keyboard focus.
+    @State private var focusRequest = 0
 
     var body: some View {
         switch sip.callPhase {
         case .idle:
             HStack {
-                TextField("Number or SIP address", text: $target)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 15))
-                    .focused($numberFocused)
-                    .staticFocusRing(numberFocused)
-                    .onSubmit(call)
-                    .controlSize(.large) // taller field
+                DialField(text: $target, placeholder: "Number or SIP address",
+                          focusRequest: focusRequest, onSubmit: call)
                 // Regular-size button (same corner shape as Hang up), padded out to the field's height.
                 Button(action: call) {
                     Image(systemName: "phone.fill").frame(width: 24, height: 22)
@@ -158,9 +154,9 @@ private struct CallSection: View {
             }
             .onAppear {
                 showKeypad = false
-                focusNumber()
+                focusRequest += 1
             }
-            .onChange(of: openCount) { _ in focusNumber() }
+            .onChange(of: openCount) { _ in focusRequest += 1 }
 
         case .incoming(let remote):
             VStack(alignment: .leading, spacing: 8) {
@@ -220,11 +216,6 @@ private struct CallSection: View {
 
     private func call() {
         sip.dial(target)
-    }
-
-    /// Deferred a tick so the popover window is key before we take focus.
-    private func focusNumber() {
-        DispatchQueue.main.async { numberFocused = true }
     }
 
 }
@@ -459,23 +450,64 @@ private struct NetworkView: View {
     }
 }
 
-// MARK: - Focus ring
+// MARK: - Number field
 
-private extension View {
-    /// Replace the system's animated focus ring with a plain one that just appears.
-    /// (focusEffectDisabled is macOS 14+; on macOS 13 the system ring is kept.)
-    @ViewBuilder
-    func staticFocusRing(_ focused: Bool) -> some View {
-        if #available(macOS 14.0, *) {
-            self.focusEffectDisabled()
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .strokeBorder(Color.accentColor.opacity(focused ? 0.7 : 0), lineWidth: 2)
-                        .allowsHitTesting(false)
-                )
-                .transaction { $0.animation = nil }
-        } else {
-            self
+/// The number field, as a native NSTextField so its focus ring can be switched off entirely
+/// (SwiftUI's focusEffectDisabled doesn't stop the animated ring on this field).
+private struct DialField: NSViewRepresentable {
+    @Binding var text: String
+    let placeholder: String
+    /// Changing this value focuses the field.
+    let focusRequest: Int
+    let onSubmit: () -> Void
+
+    func makeNSView(context: Context) -> NSTextField {
+        let field = NSTextField()
+        field.placeholderString = placeholder
+        field.font = .systemFont(ofSize: 15)
+        field.controlSize = .large
+        field.isBezeled = true
+        field.bezelStyle = .roundedBezel
+        field.focusRingType = .none
+        field.usesSingleLineMode = true
+        field.cell?.isScrollable = true
+        field.cell?.wraps = false
+        field.delegate = context.coordinator
+        return field
+    }
+
+    func updateNSView(_ field: NSTextField, context: Context) {
+        context.coordinator.parent = self
+        if field.stringValue != text { field.stringValue = text }
+        if context.coordinator.handledFocusRequest != focusRequest {
+            context.coordinator.handledFocusRequest = focusRequest
+            // Next tick, once the popover window is key.
+            DispatchQueue.main.async {
+                guard let window = field.window else { return }
+                window.makeFirstResponder(field)
+                field.currentEditor()?.selectedRange = NSRange(location: field.stringValue.count, length: 0)
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: DialField
+        var handledFocusRequest = -1
+        init(_ parent: DialField) { self.parent = parent }
+
+        func controlTextDidChange(_ note: Notification) {
+            guard let field = note.object as? NSTextField else { return }
+            parent.text = field.stringValue
+        }
+
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            if selector == #selector(NSResponder.insertNewline(_:)) {
+                parent.onSubmit()
+                return true
+            }
+            return false
         }
     }
 }
