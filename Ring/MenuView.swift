@@ -571,6 +571,14 @@ private struct DialField: NSViewRepresentable {
                 parent.onSubmit()
                 return true
             }
+            // Escape: the field editor would swallow it. Step out of the field and hand the
+            // same key press to the popover window, which closes on Escape as before.
+            if selector == #selector(NSResponder.cancelOperation(_:)),
+               let window = control.window, let event = NSApp.currentEvent, event.type == .keyDown {
+                window.makeFirstResponder(nil)
+                window.sendEvent(event)
+                return true
+            }
             return false
         }
     }
