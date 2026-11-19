@@ -42,11 +42,29 @@ or, for an installed copy: `open -a Ring --args --logging`.
 The app is ad-hoc signed (`CODE_SIGN_IDENTITY = "-"`). macOS asks for microphone access the first
 time you place or answer a call.
 
+## First-run setup
+
+1. **Allow notifications** when Ring asks on first launch.
+2. **Set Ring to Alerts:** open *System Settings › Notifications › Ring* and change the alert
+   style from **Banners** to **Alerts**. Banners disappear after a few seconds and hide the
+   Answer / Decline buttons behind *Options*; Alerts stay on screen until you act.
+
+## Incoming calls
+
+- A notification **Incoming call** appears with the caller, and **Answer** / **Decline** buttons.
+- If the popover is closed, the menu bar icon turns into a **green answer button**; clicking it
+  answers the call and opens the popover on the call controls.
+- The caller's number is put in the number field, ready to call back, whether you answer, decline
+  or miss the call.
+- Focus / Do Not Disturb hides the notification (the green icon still shows).
+
 ## Layout
 
 | File | Role |
 |---|---|
-| `Ring/RingApp.swift` | `MenuBarExtra` scene, menu-bar icon, app delegate |
+| `Ring/RingApp.swift` | `MenuBarExtra` scene, menu-bar icon (incl. answer button, call timer), app delegate |
+| `Ring/CallNotifier.swift` | Incoming-call notification with Answer / Decline |
+| `Ring/CallClock.swift` | Per-second call timer for the menu bar |
 | `Ring/SIPManager.swift` | Wraps the liblinphone `Core`: account, registration, calls, mute, DTMF |
 | `Ring/MenuView.swift` | Popover UI: status, dialer, call controls, keypad, account and settings pages |
 | `Ring/AccountSettings.swift` | Account settings in UserDefaults, password in Keychain |
@@ -57,8 +75,6 @@ time you place or answer a call.
 
 ## Known gaps / to check on first run
 
-- **Incoming calls:** only the icon changes and liblinphone plays its ring tone. The popover doesn't
-  open by itself, and there are no notifications yet.
 - **TLS certificates:** the server certificate is verified (liblinphone's default). A PBX with a
   self-signed certificate will fail to register over TLS.
 - No audio device picker: the system default input and output are used.
