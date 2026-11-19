@@ -94,7 +94,7 @@ time you place or answer a call.
 | `Ring/Theme.swift` | Light/dark adaptive colours |
 | `Ring/Sounds/ringtone.mkv` | Ring tone (Opus, mono 48 kHz, at half volume) |
 | `Ring/PhoneFormat.swift` | Country-aware phone number formatting (PhoneNumberKit) |
-| `Ring/Assets.xcassets` | App icon (source: `design/AppIcon.svg`, `design/make_icon_svg.py`) |
+| `Ring/Assets.xcassets` | App icon (source: `design/AppIcon-1024.png`; earlier vector draft in `design/AppIcon.svg`) |
 | `project.yml` | XcodeGen spec (Info.plist and entitlements are generated from it) |
 
 ## Known gaps / to check on first run
