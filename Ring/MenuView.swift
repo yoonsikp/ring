@@ -106,7 +106,7 @@ private struct StatusHeader: View {
         // (not indented under the dot) so long addresses get the full width.
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                HStack(alignment: .center, spacing: 6) {
                     Circle().fill(dotColor).frame(width: 8, height: 8)
                     Text(sip.statusText).font(.headline).lineLimit(2)
                 }
