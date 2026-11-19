@@ -32,8 +32,6 @@ struct AudioSettings: Equatable {
     /// Adaptive jitter buffer (liblinphone default). When off, a fixed buffer of `jitterBufferMs` is used.
     var adaptiveJitterBuffer = true
     var jitterBufferMs = 60
-    /// Write detailed liblinphone logs to ~/Library/Logs/Ring. Off by default: they contain SRTP keys.
-    var logging = false
 
     static let jitterBufferRange = 20...500
 
@@ -42,7 +40,6 @@ struct AudioSettings: Equatable {
         static let enabledCodecs = "enabledCodecs"
         static let adaptiveJitterBuffer = "adaptiveJitterBuffer"
         static let jitterBufferMs = "jitterBufferMs"
-        static let logging = "logging"
     }
 
     static func load() -> AudioSettings {
@@ -50,7 +47,6 @@ struct AudioSettings: Equatable {
         var s = AudioSettings()
         s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? true
         s.adaptiveJitterBuffer = d.object(forKey: Key.adaptiveJitterBuffer) as? Bool ?? true
-        s.logging = d.bool(forKey: Key.logging)
         if let ms = d.object(forKey: Key.jitterBufferMs) as? Int {
             s.jitterBufferMs = min(max(ms, jitterBufferRange.lowerBound), jitterBufferRange.upperBound)
         }
@@ -68,8 +64,7 @@ struct AudioSettings: Equatable {
         d.set(echoCancellation, forKey: Key.echoCancellation)
         d.set(adaptiveJitterBuffer, forKey: Key.adaptiveJitterBuffer)
         d.set(jitterBufferMs, forKey: Key.jitterBufferMs)
-        d.set(logging, forKey: Key.logging)
         d.set(Codec.allCases.filter(enabledCodecs.contains).map(\.rawValue), forKey: Key.enabledCodecs)
-        d.removeObject(forKey: "playReceivedDTMF") // setting removed
+        for removed in ["playReceivedDTMF", "logging"] { d.removeObject(forKey: removed) } // old settings
     }
 }

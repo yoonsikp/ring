@@ -1,4 +1,4 @@
-.PHONY: project build run clean
+.PHONY: project build run run-logging clean
 
 project:
 	xcodegen generate
@@ -9,6 +9,10 @@ build: project
 
 run: build
 	open build/Build/Products/Release/Ring.app
+
+# Same, with detailed liblinphone logs written to ~/Library/Logs/Ring
+run-logging: build
+	open build/Build/Products/Release/Ring.app --args --logging
 
 clean:
 	rm -rf build Ring.xcodeproj

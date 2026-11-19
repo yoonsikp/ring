@@ -11,7 +11,7 @@ which handles SIP, TLS, SRTP and audio.
 - SRTP is **mandatory**: calls that can't use SRTP fail
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Connect/disconnect switch in the popover
-- Settings: echo cancellation, adaptive or fixed-size jitter buffer, logging (off by default), and codecs —
+- Settings: echo cancellation, adaptive or fixed-size jitter buffer, and codecs —
   only G.711 (PCMU/PCMA), G.722 and GSM can be enabled; every other codec is disabled (telephone-event stays on for DTMF)
 
 Requires macOS 13+.
@@ -26,6 +26,17 @@ make run        # generates Ring.xcodeproj, builds Release, launches the app
 
 Or run `make project` and open `Ring.xcodeproj` in Xcode. Swift Package Manager downloads the
 linphone SDK (`linphonesw`, pinned to 5.5.41) on the first build.
+
+### Logging
+
+Logging is off normally (logs contain the call's SRTP keys). To write detailed liblinphone logs to
+`~/Library/Logs/Ring`, launch with `--logging`; a **Logs** button then appears in the popover:
+
+```bash
+make run-logging
+```
+
+or, for an installed copy: `open -a Ring --args --logging`.
 
 The app is ad-hoc signed (`CODE_SIGN_IDENTITY = "-"`). macOS asks for microphone access the first
 time you place or answer a call.

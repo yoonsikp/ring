@@ -33,13 +33,16 @@ final class SIPManager: ObservableObject {
     /// Keeps App Nap from throttling us, so we keep the SIP connection alive and hear incoming calls.
     private var activity: NSObjectProtocol?
 
+    /// Detailed logging is only on when launched with `--logging` (logs contain SRTP keys).
+    static let loggingEnabled = CommandLine.arguments.contains("--logging")
+
     /// liblinphone logs go here (~/Library/Logs/Ring).
     static let logDirectory: URL = FileManager.default
         .urls(for: .libraryDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("Logs/Ring", isDirectory: true)
 
     init() {
-        Self.applyLogging(audio.logging) // before the core exists, so startup is logged too
+        Self.applyLogging(Self.loggingEnabled) // before the core exists, so startup is logged too
 
         activity = ProcessInfo.processInfo.beginActivity(
             options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
@@ -138,7 +141,6 @@ final class SIPManager: ObservableObject {
     }
 
     private func applyAudio() {
-        Self.applyLogging(audio.logging)
         core.echoCancellationEnabled = audio.echoCancellation
         core.audioAdaptiveJittcompEnabled = audio.adaptiveJitterBuffer
         core.audioJittcomp = audio.jitterBufferMs // fixed size, or the starting size when adaptive

@@ -44,7 +44,7 @@ private struct MainPage: View {
             HStack {
                 Button("Account…") { show(.account) }
                 Button("Settings…") { show(.settings) }
-                if sip.audio.logging {
+                if SIPManager.loggingEnabled {
                     Button("Logs") { NSWorkspace.shared.open(SIPManager.logDirectory) }
                         .help("Open the liblinphone log folder")
                 }
@@ -305,12 +305,6 @@ private struct SettingsView: View {
             Text(draft.adaptiveJitterBuffer
                  ? "Grows and shrinks with network conditions."
                  : "Constant delay. Lower = less lag; too low causes dropouts on a jittery network.")
-                .font(.caption).foregroundStyle(.secondary)
-
-            Divider()
-
-            Toggle("Logging", isOn: $draft.logging)
-            Text("Writes detailed logs to ~/Library/Logs/Ring for troubleshooting. They include call encryption keys, so leave this off normally.")
                 .font(.caption).foregroundStyle(.secondary)
 
             HStack {
