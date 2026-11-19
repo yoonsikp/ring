@@ -138,6 +138,11 @@ private struct CallSection: View {
                     Spacer()
                 }
                 .buttonStyle(.bordered)
+                if !sip.receivedDigits.isEmpty {
+                    Text("Received: \(sip.receivedDigits)")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.head)
+                }
                 if showKeypad { Keypad() }
                 HangUpButton()
             }

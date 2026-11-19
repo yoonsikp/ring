@@ -19,6 +19,8 @@ final class SIPManager: ObservableObject {
     @Published private(set) var registration: Registration = .disconnected
     @Published private(set) var callPhase: CallPhase = .idle
     @Published private(set) var isMuted = false
+    /// Digits the other side pressed during the current call.
+    @Published private(set) var receivedDigits = ""
     @Published private(set) var lastError: String?
     @Published private(set) var settings = AccountSettings.load()
     /// User intent: whether we *want* to be registered (the menu's Connect/Disconnect toggle).
@@ -83,6 +85,9 @@ final class SIPManager: ObservableObject {
         delegate = CoreDelegateStub(
             onCallStateChanged: { [weak self] _, call, state, message in
                 MainActor.assumeIsolated { self?.handleCall(call, state: state, message: message) }
+            },
+            onDtmfReceived: { [weak self] _, _, dtmf in
+                MainActor.assumeIsolated { self?.handleReceivedDTMF(dtmf) }
             },
             onAccountRegistrationStateChanged: { [weak self] _, account, state, message in
                 MainActor.assumeIsolated { self?.handleRegistration(account, state: state, message: message) }
@@ -241,6 +246,14 @@ final class SIPManager: ObservableObject {
         core.playDtmf(dtmf: CChar(ascii), durationMs: 150) // local feedback tone
     }
 
+    /// The remote side's DTMF arrives as RTP telephone-events (RFC 2833) or SIP INFO, which
+    /// liblinphone strips from the audio, so play the tone locally ourselves.
+    private func handleReceivedDTMF(_ dtmf: Int) {
+        guard dtmf > 0, dtmf < 128, let scalar = Unicode.Scalar(UInt32(dtmf)), "0123456789*#ABCD".unicodeScalars.contains(scalar) else { return }
+        core.playDtmf(dtmf: CChar(dtmf), durationMs: 200)
+        receivedDigits.append(Character(scalar))
+    }
+
     private func handleCall(_ call: Call, state: Call.State, message: String) {
         let remote = call.remoteAddress.map(Self.displayName) ?? "Unknown"
         switch state {
@@ -267,6 +280,7 @@ final class SIPManager: ObservableObject {
 
     private func endCall() {
         callPhase = .idle
+        receivedDigits = ""
         if isMuted { isMuted = false; core.micEnabled = true }
     }
 
