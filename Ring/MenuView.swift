@@ -7,6 +7,7 @@ struct MenuView: View {
 
     @EnvironmentObject private var sip: SIPManager
     @State private var page = Page.main
+    @State private var window: NSWindow?
 
     var body: some View {
         Group {
@@ -20,11 +21,31 @@ struct MenuView: View {
         }
         .padding(14)
         .frame(width: 280)
-        // When the popover closes (loses focus), go back to the home page next time it opens.
-        // While no account is configured the account form is shown regardless, so first-run
-        // setup isn't interrupted.
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in
+        .background(WindowReader(window: $window))
+        // When the popover actually closes (its window leaves the screen), go back to the home
+        // page for next time. Losing focus, e.g. to a system prompt, doesn't count. While no
+        // account is configured the account form is shown regardless, so first-run setup is kept.
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification)) { note in
+            guard let window, note.object as? NSWindow === window,
+                  !window.occlusionState.contains(.visible) else { return }
             page = .main
+        }
+    }
+}
+
+/// Exposes the NSWindow hosting a SwiftUI view.
+private struct WindowReader: NSViewRepresentable {
+    @Binding var window: NSWindow?
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { window = view.window }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if nsView.window !== window {
+            DispatchQueue.main.async { window = nsView.window }
         }
     }
 }
