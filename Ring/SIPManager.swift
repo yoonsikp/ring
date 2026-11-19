@@ -114,8 +114,11 @@ final class SIPManager: ObservableObject {
 
     func update(settings new: AccountSettings) {
         new.save()
+        var oldAccount = settings, newAccount = new
+        oldAccount.echoCancellation = false; newAccount.echoCancellation = false
         settings = new
-        applyAccount()
+        core.echoCancellationEnabled = new.echoCancellation // takes effect from the next call
+        if oldAccount != newAccount { applyAccount() }       // only re-register if the account changed
     }
 
     func setConnected(_ on: Bool) {
@@ -126,6 +129,7 @@ final class SIPManager: ObservableObject {
     /// Tear down whatever account exists and (re)create the single configured one.
     private func applyAccount() {
         lastError = nil
+        core.echoCancellationEnabled = settings.echoCancellation
         activeAccount = nil
         core.clearAccounts()
         core.clearAllAuthInfo()

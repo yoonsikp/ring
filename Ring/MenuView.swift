@@ -212,6 +212,10 @@ private struct AccountView: View {
                               : "Warning: without TLS the SRTP keys are sent in the clear.")
                 .font(.caption).foregroundStyle(draft.useTLS ? Color.secondary : Color.orange)
 
+            Toggle("Echo cancellation", isOn: $draft.echoCancellation)
+            Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
+                .font(.caption).foregroundStyle(.secondary)
+
             HStack {
                 if sip.settings.isComplete {
                     Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)

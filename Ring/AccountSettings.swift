@@ -11,6 +11,8 @@ struct AccountSettings: Equatable {
     /// Optional registrar/proxy host[:port]; if empty, the SIP address's domain is used.
     var server: String = ""
     var useTLS: Bool = true
+    /// Software echo canceller. Needed on speakers; turn off with headphones (it can make audio choppy).
+    var echoCancellation: Bool = true
 
     var isComplete: Bool { !sipAddress.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
 
@@ -23,6 +25,7 @@ struct AccountSettings: Equatable {
 
     private enum Key {
         static let sipAddress = "sipAddress", username = "username", server = "server", useTLS = "useTLS"
+        static let echoCancellation = "echoCancellation"
     }
 
     static func load() -> AccountSettings {
@@ -32,6 +35,7 @@ struct AccountSettings: Equatable {
         s.username = d.string(forKey: Key.username) ?? ""
         s.server = d.string(forKey: Key.server) ?? ""
         s.useTLS = d.object(forKey: Key.useTLS) as? Bool ?? true
+        s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? true
         s.password = Keychain.read() ?? ""
         return s
     }
@@ -42,6 +46,7 @@ struct AccountSettings: Equatable {
         d.set(username, forKey: Key.username)
         d.set(server, forKey: Key.server)
         d.set(useTLS, forKey: Key.useTLS)
+        d.set(echoCancellation, forKey: Key.echoCancellation)
         if password.isEmpty { Keychain.delete() } else { Keychain.write(password) }
     }
 }
