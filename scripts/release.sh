@@ -29,9 +29,12 @@ if ! security find-identity -v -p codesigning | grep -q "Developer ID Applicatio
   echo "Create one in Xcode › Settings › Accounts › Manage Certificates (+ › Developer ID Application)." >&2
   exit 1
 fi
-if ! xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1; then
-  echo "Notary profile '$PROFILE' not found. Create it once with:" >&2
+if ! NOTARY_CHECK=$(xcrun notarytool history --keychain-profile "$PROFILE" 2>&1); then
+  echo "Can't use the notary profile '$PROFILE'. notarytool said:" >&2
+  echo "$NOTARY_CHECK" | sed 's/^/    /' >&2
+  echo "If the profile is missing or misnamed, (re)create it with:" >&2
   echo "  xcrun notarytool store-credentials $PROFILE --apple-id <your Apple ID> --team-id $TEAM --password <app-specific password>" >&2
+  echo "or point at another name with NOTARY_PROFILE=<name>." >&2
   exit 1
 fi
 
