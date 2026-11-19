@@ -40,14 +40,14 @@ private struct StatusIcon: View {
     /// Incoming call: a white phone on a green rounded rectangle, twice the icon's width, so the
     /// menu bar item looks like an answer button. Not a template image, so it keeps its colours.
     private static let answerButton: NSImage = {
-        let size = NSSize(width: canvas.width * 2, height: 18)
+        let size = NSSize(width: canvas.width * 2 + 4, height: 18)
         let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
             .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
         let symbol = NSImage(systemSymbolName: "phone.fill", accessibilityDescription: nil)?
             .withSymbolConfiguration(config)
         let image = NSImage(size: size, flipped: false) { rect in
             NSColor.systemGreen.setFill()
-            NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6).fill()
+            NSBezierPath(roundedRect: rect, xRadius: 8, yRadius: 8).fill()
             if let symbol {
                 let s = symbol.size
                 symbol.draw(in: NSRect(x: (rect.width - s.width) / 2, y: (rect.height - s.height) / 2,

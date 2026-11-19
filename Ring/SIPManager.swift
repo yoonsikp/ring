@@ -24,6 +24,8 @@ final class SIPManager: ObservableObject {
     @Published private(set) var settings = AccountSettings.load()
     @Published private(set) var audio = AudioSettings.load()
     @Published private(set) var network = NetworkSettings.load()
+    /// The number field's contents. Lives here so incoming calls can fill in the caller.
+    @Published var dialTarget = ""
     /// Whether the menu bar popover is on screen (reported by MenuView).
     @Published private(set) var popoverOpen = false
     /// Call duration for the menu bar (ticks separately from the rest of the UI).
@@ -481,6 +483,11 @@ final class SIPManager: ObservableObject {
         switch state {
         case .IncomingReceived, .IncomingEarlyMedia:
             if callPhase == .idle { lastError = nil }
+            // Prefill the number field with the caller, so it's there to call back
+            // whether the call is answered, declined or missed.
+            if state == .IncomingReceived, let address = call.remoteAddress {
+                dialTarget = Self.callbackTarget(address)
+            }
             callPhase = .incoming(remote: remote)
         case .OutgoingInit, .OutgoingProgress, .OutgoingRinging, .OutgoingEarlyMedia:
             callPhase = .outgoing(remote: remote)
@@ -539,6 +546,16 @@ final class SIPManager: ObservableObject {
             }
         default: done(false)
         }
+    }
+
+    /// What to put in the number field to call this address back: just the number for phone
+    /// numbers (voip.ms sends e.g. sip:4313347050@…), otherwise user@domain.
+    private static func callbackTarget(_ a: Address) -> String {
+        guard let user = a.username, !user.isEmpty else { return a.asStringUriOnly() }
+        let isNumber = user.allSatisfy { $0.isNumber || "+*#".contains($0) }
+        if isNumber { return user }
+        if let domain = a.domain, !domain.isEmpty { return "\(user)@\(domain)" }
+        return user
     }
 
     private static func displayName(_ a: Address) -> String {
