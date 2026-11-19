@@ -144,12 +144,14 @@ private struct CallSection: View {
             HStack {
                 TextField("Number or SIP address", text: $target)
                     .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 15))
                     .focused($numberFocused)
                     .onSubmit(call)
                 Button(action: call) { Image(systemName: "phone.fill") }
                     .buttonStyle(.borderedProminent).tint(.callGreen)
                     .disabled(target.isEmpty || sip.registration != .connected)
             }
+            .controlSize(.large) // taller field, with the call button matching its height
             .onAppear {
                 showKeypad = false
                 focusNumber()
