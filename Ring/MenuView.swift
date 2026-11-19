@@ -200,6 +200,7 @@ private struct Keypad: View {
 private struct AccountView: View {
     @EnvironmentObject private var sip: SIPManager
     @State private var draft = AccountSettings()
+    @State private var showAdvanced = false
     let onDone: () -> Void
 
     var body: some View {
@@ -207,12 +208,18 @@ private struct AccountView: View {
             Text("SIP Account").font(.headline)
 
             field("SIP address", "sip:alice@example.com", $draft.sipAddress)
-            field("Username", "Defaults to the user part of the address", $draft.username)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Password").font(.caption).foregroundStyle(.secondary)
                 SecureField("", text: $draft.password).textFieldStyle(.roundedBorder)
             }
-            field("Server (optional)", "host[:port], defaults to the address's domain", $draft.server)
+
+            DisclosureGroup("Username and server", isExpanded: $showAdvanced) {
+                VStack(alignment: .leading, spacing: 10) {
+                    field("Username (optional)", "Defaults to the user part of the address", $draft.username)
+                    field("Server (optional)", "host[:port], defaults to the address's domain", $draft.server)
+                }
+                .padding(.top, 6)
+            }
 
             Toggle("Use TLS", isOn: $draft.useTLS)
             Text(draft.useTLS ? "Signalling over TLS; audio is always SRTP."
@@ -235,7 +242,11 @@ private struct AccountView: View {
                 .disabled(!draft.isComplete)
             }
         }
-        .onAppear { draft = sip.settings }
+        .onAppear {
+            draft = sip.settings
+            // Start expanded if either optional field is in use, so it isn't hidden.
+            showAdvanced = !draft.username.isEmpty || !draft.server.isEmpty
+        }
     }
 
     private func field(_ label: String, _ prompt: String, _ text: Binding<String>) -> some View {
