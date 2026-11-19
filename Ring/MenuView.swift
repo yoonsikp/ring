@@ -147,7 +147,7 @@ private struct CallSection: View {
                           focusRequest: focusRequest, onSubmit: call)
                 // Regular-size button (same corner shape as Hang up), padded out to the field's height.
                 Button(action: call) {
-                    Image(systemName: "phone.fill").frame(width: 24, height: 22)
+                    Image(systemName: "phone.fill").frame(width: 24, height: 20)
                 }
                 .buttonStyle(.borderedProminent).tint(.callGreen)
                 .disabled(target.isEmpty || sip.registration != .connected)
@@ -225,7 +225,7 @@ private struct HangUpButton: View {
 
     var body: some View {
         Button(role: .destructive) { sip.hangUp() } label: {
-            Label("Hang up", systemImage: "phone.down.fill").frame(maxWidth: .infinity)
+            Label("Hang up", systemImage: "phone.down.fill").frame(maxWidth: .infinity, minHeight: 19)
         }
         .buttonStyle(.borderedProminent).tint(.callRed)
     }
