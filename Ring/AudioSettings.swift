@@ -32,14 +32,18 @@ struct AudioSettings: Equatable {
     /// Adaptive jitter buffer (liblinphone default). When off, a fixed buffer of `jitterBufferMs` is used.
     var adaptiveJitterBuffer = true
     var jitterBufferMs = 60
+    /// Extra gain on incoming audio, in dB (plain amplification, not compression).
+    var speakerBoostDb = 0
 
     static let jitterBufferRange = 20...500
+    static let speakerBoostRange = 0...12
 
     private enum Key {
         static let echoCancellation = "echoCancellation"
         static let enabledCodecs = "enabledCodecs"
         static let adaptiveJitterBuffer = "adaptiveJitterBuffer"
         static let jitterBufferMs = "jitterBufferMs"
+        static let speakerBoostDb = "speakerBoostDb"
     }
 
     static func load() -> AudioSettings {
@@ -49,6 +53,9 @@ struct AudioSettings: Equatable {
         s.adaptiveJitterBuffer = d.object(forKey: Key.adaptiveJitterBuffer) as? Bool ?? true
         if let ms = d.object(forKey: Key.jitterBufferMs) as? Int {
             s.jitterBufferMs = min(max(ms, jitterBufferRange.lowerBound), jitterBufferRange.upperBound)
+        }
+        if let db = d.object(forKey: Key.speakerBoostDb) as? Int {
+            s.speakerBoostDb = min(max(db, speakerBoostRange.lowerBound), speakerBoostRange.upperBound)
         }
         if let names = d.stringArray(forKey: Key.enabledCodecs) {
             // Older versions stored PCMU and PCMA separately.
@@ -64,6 +71,7 @@ struct AudioSettings: Equatable {
         d.set(echoCancellation, forKey: Key.echoCancellation)
         d.set(adaptiveJitterBuffer, forKey: Key.adaptiveJitterBuffer)
         d.set(jitterBufferMs, forKey: Key.jitterBufferMs)
+        d.set(speakerBoostDb, forKey: Key.speakerBoostDb)
         d.set(Codec.allCases.filter(enabledCodecs.contains).map(\.rawValue), forKey: Key.enabledCodecs)
         for removed in ["playReceivedDTMF", "logging"] { d.removeObject(forKey: removed) } // old settings
     }

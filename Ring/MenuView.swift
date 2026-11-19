@@ -335,6 +335,21 @@ private struct SettingsView: View {
                  : "Constant delay. Lower = less lag; too low causes dropouts on a jittery network.")
                 .font(.caption).foregroundStyle(.secondary)
 
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("Speaker boost")
+                    Spacer()
+                    Text(draft.speakerBoostDb == 0 ? "Off" : "+\(draft.speakerBoostDb) dB")
+                        .monospacedDigit().foregroundStyle(.secondary)
+                }
+                Slider(value: Binding(get: { Double(draft.speakerBoostDb) },
+                                      set: { draft.speakerBoostDb = Int($0.rounded()) }),
+                       in: Double(AudioSettings.speakerBoostRange.lowerBound)...Double(AudioSettings.speakerBoostRange.upperBound),
+                       step: 1)
+                Text("Makes the caller louder. Too much can distort loud voices.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
             Divider()
 
             Text("Codecs").font(.subheadline.weight(.semibold))

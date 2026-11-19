@@ -142,6 +142,7 @@ final class SIPManager: ObservableObject {
 
     private func applyAudio() {
         core.echoCancellationEnabled = audio.echoCancellation
+        core.playbackGainDb = Float(audio.speakerBoostDb)
         core.audioAdaptiveJittcompEnabled = audio.adaptiveJitterBuffer
         core.audioJittcomp = audio.jitterBufferMs // fixed size, or the starting size when adaptive
         let allowed = Set(audio.enabledCodecs.flatMap(\.mimeTypes))
