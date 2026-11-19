@@ -21,8 +21,31 @@ private struct StatusIcon: View {
     @ObservedObject var sip: SIPManager
 
     var body: some View {
-        Image(systemName: sip.statusSymbol)
+        Image(nsImage: Self.image(for: sip.statusSymbol))
             .accessibilityLabel(sip.statusText)
+            .transaction { $0.animation = nil } // never animate the status item
+    }
+
+    /// Every state's symbol drawn centred on the same fixed canvas, so the status item
+    /// never changes size (the SF Symbols for each state have different widths).
+    private static var cache: [String: NSImage] = [:]
+    private static let canvas = NSSize(width: 20, height: 16)
+
+    private static func image(for name: String) -> NSImage {
+        if let cached = cache[name] { return cached }
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(config) else { return NSImage(size: canvas) }
+        let image = NSImage(size: canvas, flipped: false) { rect in
+            let s = symbol.size
+            let scale = min(1, rect.width / s.width, rect.height / s.height)
+            let w = s.width * scale, h = s.height * scale
+            symbol.draw(in: NSRect(x: (rect.width - w) / 2, y: (rect.height - h) / 2, width: w, height: h))
+            return true
+        }
+        image.isTemplate = true // adapts to light/dark menu bar like a normal icon
+        cache[name] = image
+        return image
     }
 }
 
