@@ -161,7 +161,7 @@ private struct CallSection: View {
 
         case .incoming(let remote):
             VStack(alignment: .leading, spacing: 10) {
-                callHeader(remote) { Text("Incoming call").foregroundStyle(.secondary) }
+                callHeader(remote) { Text("Incoming…").foregroundStyle(.secondary) }
                 HStack {
                     Button(role: .destructive) { sip.hangUp() } label: {
                         Label("Decline", systemImage: "phone.down.fill")
