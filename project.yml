@@ -100,8 +100,12 @@ targets:
           set -e
           FRAMEWORKS="$TARGET_BUILD_DIR/$WRAPPER_NAME/Contents/Frameworks"
           [ -d "$FRAMEWORKS" ] || exit 0
+          # Real identities (Developer ID for release) get a secure timestamp and the hardened
+          # runtime, which notarization requires; ad-hoc ("-") builds can't be timestamped.
+          ID="${EXPANDED_CODE_SIGN_IDENTITY:--}"
+          if [ "$ID" = "-" ]; then TS="--timestamp=none"; else TS="--timestamp"; fi
           for fw in "$FRAMEWORKS"/*.framework "$FRAMEWORKS"/*.dylib; do
             [ -e "$fw" ] || continue
-            codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" \
-              --preserve-metadata=identifier,flags --timestamp=none "$fw"
+            codesign --force --sign "$ID" --options runtime $TS \
+              --preserve-metadata=identifier "$fw"
           done

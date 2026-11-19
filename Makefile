@@ -1,4 +1,4 @@
-.PHONY: project build run run-logging native size sdk sdk-native small clean
+.PHONY: project build run run-logging native size sdk sdk-native small release clean
 
 project:
 	xcodegen generate
@@ -37,6 +37,11 @@ small:
 	xcodebuild -project Ring.xcodeproj -scheme Ring -configuration Release \
 		-derivedDataPath build -destination 'generic/platform=macOS' build
 	open build/Build/Products/Release/Ring.app
+
+# Signed (Developer ID), notarized, stapled universal build in dist/. Needs TEAM=<Team ID>;
+# optional NOTARY_PROFILE (default ring-notary) and SMALL=1 (use the minimal SDK). See README.
+release:
+	TEAM="$(TEAM)" NOTARY_PROFILE="$(NOTARY_PROFILE)" SMALL="$(SMALL)" scripts/release.sh
 
 # Size of the built app and its biggest parts.
 size:

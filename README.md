@@ -62,6 +62,35 @@ or, for an installed copy: `open -a Ring --args --logging`.
 The app is ad-hoc signed (`CODE_SIGN_IDENTITY = "-"`). macOS asks for microphone access the first
 time you place or answer a call.
 
+## Releasing
+
+`make release` builds a universal app signed with your **Developer ID**, has Apple notarize it, and
+writes `dist/Ring-<version>.zip`. It opens on any Mac without warnings, and because every build
+carries the same identity, macOS stops asking for your password to read the saved SIP password.
+
+One-time setup:
+
+1. **Developer ID certificate:** Xcode › Settings › Accounts › your team › *Manage Certificates…*
+   › **+** › *Developer ID Application*.
+2. **App-specific password:** create one at account.apple.com › Sign-In and Security.
+3. **Notary profile** (stored in your keychain):
+
+   ```bash
+   xcrun notarytool store-credentials ring-notary --apple-id you@example.com --team-id ABCDE12345 --password <app-specific password>
+   ```
+
+Then, for each release (bump `MARKETING_VERSION` in `project.yml` first):
+
+```bash
+make release TEAM=ABCDE12345
+```
+
+Add `SMALL=1` to use the minimal SDK from `make sdk`. Your Team ID is at developer.apple.com ›
+Account › Membership details.
+
+The first time a Developer ID build reads the saved password, macOS may ask once more (the earlier
+ad-hoc builds created that Keychain item); choose **Always Allow**, and it won't ask again.
+
 ## First-run setup
 
 1. **Allow notifications** when Ring asks on first launch.

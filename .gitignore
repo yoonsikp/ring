@@ -5,3 +5,4 @@ Ring/Ring.entitlements
 .DS_Store
 xcuserdata/
 project-small.yml
+dist/
