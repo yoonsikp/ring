@@ -1,15 +1,13 @@
 import SwiftUI
 import AppKit
 
-/// Contents of the menu bar popover: main, account and settings pages.
+/// Contents of the menu bar panel: main, account, audio and network pages.
 struct MenuView: View {
     enum Page { case main, account, settings, network }
 
     @EnvironmentObject private var sip: SIPManager
+    @EnvironmentObject private var panel: PanelState
     @State private var page = Page.main
-    @State private var window: NSWindow?
-    /// Bumped each time the popover opens, so the home page can focus the number field.
-    @State private var openCount = 0
     /// The number being dialled. Kept here (not in the home page) so it survives
     /// going to Account / Audio / Network and back.
     @State private var dialTarget = ""
@@ -23,40 +21,14 @@ struct MenuView: View {
             } else if page == .network {
                 NetworkView(onDone: { page = .main })
             } else {
-                MainPage(show: { page = $0 }, openCount: openCount, target: $dialTarget)
+                MainPage(show: { page = $0 }, openCount: panel.openCount, target: $dialTarget)
             }
         }
         .padding(14)
         .frame(width: 280)
-        .background(WindowReader(window: $window))
-        // When the popover actually closes (its window leaves the screen), go back to the home
-        // page for next time. Losing focus, e.g. to a system prompt, doesn't count. While no
-        // account is configured the account form is shown regardless, so first-run setup is kept.
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification)) { note in
-            guard let window, note.object as? NSWindow === window else { return }
-            if window.occlusionState.contains(.visible) {
-                openCount += 1
-            } else {
-                page = .main
-            }
-        }
-    }
-}
-
-/// Exposes the NSWindow hosting a SwiftUI view.
-private struct WindowReader: NSViewRepresentable {
-    @Binding var window: NSWindow?
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async { window = view.window }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        if nsView.window !== window {
-            DispatchQueue.main.async { window = nsView.window }
-        }
+        // Closing the panel returns to the home page for next time. While no account is
+        // configured the account form is shown regardless, so first-run setup is kept.
+        .onChange(of: panel.closeCount) { _ in page = .main }
     }
 }
 
