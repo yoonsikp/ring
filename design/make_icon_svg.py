@@ -3,7 +3,7 @@
 Render AppIcon.svg to a 1024x1024 PNG (e.g. in a browser) and resize it into
 Ring/Assets.xcassets/AppIcon.appiconset (16-512 pt, 1x and 2x)."""
 import math, os
-LROT=os.environ.get("LROT","24"); RROT=os.environ.get("RROT","-24"); TILT=os.environ.get("TILT","-32")
+LROT=os.environ.get("LROT","-12"); RROT=os.environ.get("RROT","12"); TILT=os.environ.get("TILT","-8")
 OUT=os.environ.get("OUT","AppIcon.svg")
 
 S = 1024          # canvas
@@ -41,35 +41,32 @@ for lat in (-60, -30, 0, 30, 60):
 # Handset, drawn horizontally around (0,0) then rotated and placed over the globe.
 handset = f"""
   <g id="handset">
-    <!-- handle -->
-    <path d="M -200 0 C -150 -132, 150 -132, 200 0" fill="none" stroke="url(#hsBody)"
-          stroke-width="84" stroke-linecap="round"/>
-    <!-- earpiece and mouthpiece -->
-    <g transform="translate(-214 30) rotate({LROT})">
-      <rect x="-116" y="-64" width="232" height="128" rx="64" fill="url(#hsBody)"/>
-      <rect x="-80" y="22" width="160" height="22" rx="11" fill="#000" opacity="0.10"/>
+    <!-- handle: a deep arch; the ear and chin sit on its concave (lower) side -->
+    <path d="M -170 40 C -175 -175, 175 -175, 170 40" fill="none" stroke="#34C759"
+          stroke-width="104" stroke-linecap="butt"/>
+    <!-- earpiece / mouthpiece: wider than the handle; their faces (darker) point into the
+         curve, towards the face, tilted slightly towards each other -->
+    <g transform="translate(-178 70) rotate({LROT})">
+      <path d="M -120 -30 C -120 -70, 120 -70, 120 -30 L 112 30 C 108 50, -108 50, -112 30 Z" fill="#34C759"/>
+      <rect x="-104" y="26" width="208" height="26" rx="13" fill="#248A3D"/>
     </g>
-    <g transform="translate(214 30) rotate({RROT})">
-      <rect x="-116" y="-64" width="232" height="128" rx="64" fill="url(#hsBody)"/>
-      <rect x="-80" y="22" width="160" height="22" rx="11" fill="#000" opacity="0.10"/>
+    <g transform="translate(178 70) rotate({RROT})">
+      <path d="M -120 -30 C -120 -70, 120 -70, 120 -30 L 112 30 C 108 50, -108 50, -112 30 Z" fill="#34C759"/>
+      <rect x="-104" y="26" width="208" height="26" rx="13" fill="#248A3D"/>
     </g>
-    <!-- highlight along the top of the handle -->
-    <path d="M -168 -62 C -110 -140, 110 -140, 168 -62" fill="none" stroke="#fff"
-          stroke-opacity="0.55" stroke-width="16" stroke-linecap="round"/>
   </g>
 """
 
 svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{S}" height="{S}" viewBox="0 0 {S} {S}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3B82F6"/>
-      <stop offset="1" stop-color="#1E3A8A"/>
+      <stop offset="0" stop-color="#2F6FE4"/>
+      <stop offset="1" stop-color="#1D4FB8"/>
     </linearGradient>
-    <radialGradient id="globe" cx="0.36" cy="0.30" r="0.85">
-      <stop offset="0" stop-color="#A5F3FC"/>
-      <stop offset="0.45" stop-color="#22B8E8"/>
-      <stop offset="1" stop-color="#0B4FA8"/>
-    </radialGradient>
+    <linearGradient id="globe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
     <radialGradient id="globeShine" cx="0.33" cy="0.26" r="0.38">
       <stop offset="0" stop-color="#fff" stop-opacity="0.55"/>
       <stop offset="1" stop-color="#fff" stop-opacity="0"/>
@@ -87,35 +84,36 @@ svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{S}" height="{S}" viewB
     <filter id="iconShadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.30"/>
     </filter>
+    <!-- white outline around the handset (separates it from the globe), then a soft shadow -->
     <filter id="hsShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#0A1F4D" flood-opacity="0.45"/>
+      <feMorphology in="SourceAlpha" operator="dilate" radius="14" result="grown"/>
+      <feFlood flood-color="#fff"/>
+      <feComposite in2="grown" operator="in" result="outline"/>
+      <feMerge result="outlined"><feMergeNode in="outline"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feDropShadow in="outlined" dx="0" dy="8" stdDeviation="7" flood-color="#0A1F4D" flood-opacity="0.30"/>
     </filter>
     <filter id="globeShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#081A40" flood-opacity="0.40"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#081A40" flood-opacity="0.22"/>
     </filter>
   </defs>
 
   <!-- squircle background -->
   <path d="{sq}" fill="url(#bg)" filter="url(#iconShadow)"/>
-  <g clip-path="url(#sqClip)">
-    <path d="{sq}" fill="url(#sheen)"/>
-  </g>
 
   <!-- globe -->
   <g filter="url(#globeShadow)">
     <circle cx="{gx}" cy="{gy}" r="{gr}" fill="url(#globe)"/>
   </g>
-  <g clip-path="url(#globeClip)" fill="none" stroke="#fff" stroke-opacity="0.42" stroke-width="9">
+  <g clip-path="url(#globeClip)" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="10">
     {meridians}
     <line x1="{gx}" y1="{gy - gr}" x2="{gx}" y2="{gy + gr}"/>
     {parallels}
   </g>
-  <circle cx="{gx}" cy="{gy}" r="{gr}" fill="url(#globeShine)"/>
-  <circle cx="{gx}" cy="{gy}" r="{gr - 4}" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="8"/>
+  <circle cx="{gx}" cy="{gy}" r="{gr - 5}" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="10"/>
 
   <!-- handset over the globe -->
   <defs>{handset}</defs>
-  <g transform="translate({C + 6} {C + 70}) rotate({TILT})" filter="url(#hsShadow)">
+  <g transform="translate({C} {C + 40}) rotate({TILT}) scale(0.9)" filter="url(#hsShadow)">
     <use href="#handset"/>
   </g>
 </svg>
