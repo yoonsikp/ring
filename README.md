@@ -28,6 +28,9 @@ You need Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew 
 make run        # generates Ring.xcodeproj, builds Release, launches the app
 ```
 
+Builds are for **this Mac's processor only** (Intel or Apple Silicon), to keep the app small.
+For a build that runs on both, use `make universal`. `make size` shows what takes the space.
+
 Or run `make project` and open `Ring.xcodeproj` in Xcode. Swift Package Manager downloads the
 linphone SDK (`linphonesw`, pinned to 5.5.41) and PhoneNumberKit (4.3.0) on the first build.
 
@@ -75,7 +78,7 @@ time you place or answer a call.
 | `Ring/AudioSettings.swift` | Echo cancellation, jitter buffer, volume gain, codec selection |
 | `Ring/NetworkSettings.swift` | IPv6, STUN/TURN server, ICE, TURN credentials |
 | `Ring/Theme.swift` | Light/dark adaptive colours |
-| `Ring/Sounds/ringtone.wav` | Ring tone (mono 48 kHz 16-bit WAV, at half volume) |
+| `Ring/Sounds/ringtone.mkv` | Ring tone (Opus, mono 48 kHz, at half volume) |
 | `Ring/PhoneFormat.swift` | Country-aware phone number formatting (PhoneNumberKit) |
 | `project.yml` | XcodeGen spec (Info.plist and entitlements are generated from it) |
 

@@ -89,8 +89,9 @@ final class SIPManager: ObservableObject {
             try? core.setTransports(newValue: transports)
         }
 
-        // Custom ring tone (Ring/Sounds/ringtone.wav: mono 48 kHz WAV, already at half volume).
-        if let ringtone = Bundle.main.path(forResource: "ringtone", ofType: "wav") {
+        // Custom ring tone (Ring/Sounds/ringtone.mkv: Opus, mono 48 kHz, already at half volume;
+        // the same container/codec as the SDK's own ring tones).
+        if let ringtone = Bundle.main.path(forResource: "ringtone", ofType: "mkv") {
             core.ring = ringtone
         }
 

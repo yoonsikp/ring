@@ -41,11 +41,20 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         ENABLE_USER_SCRIPT_SANDBOXING: NO # the post-build step edits the built app
+        # Size: build only for this Mac's processor (`make universal` builds both), optimise for size.
+        ARCHS: $(NATIVE_ARCH_ACTUAL)
+        ONLY_ACTIVE_ARCH: YES
+        SWIFT_OPTIMIZATION_LEVEL: -Osize
+        GCC_OPTIMIZATION_LEVEL: s
+        DEAD_CODE_STRIPPING: YES
+        STRIP_INSTALLED_PRODUCT: YES
+        DEPLOYMENT_POSTPROCESSING: YES
+        STRIP_STYLE: all
     postBuildScripts:
       - name: Remove unused liblinphone media
         basedOnDependencyAnalysis: false
         script: |
-          # The SDK ships ~9 MB of sounds. Ring has its own ring tone (Ring/Sounds/ringtone.wav),
+          # The SDK ships ~9 MB of sounds. Ring has its own ring tone (Ring/Sounds/ringtone.mkv),
           # so keep only the ringback tone (ringback.wav) and silence.mkv. The SDK ring tones,
           # hold music, test recordings and the chat sound go.
           set -e
@@ -57,6 +66,27 @@ targets:
                    four_hands_together.mkv leaving_dreams.mkv toy-mono.wav hello16000.wav \
                    hello8000.wav incoming_chat.wav; do
             rm -f "$RES/$f"
+          done
+
+      - name: Thin and strip embedded frameworks
+        basedOnDependencyAnalysis: false
+        script: |
+          # The SDK frameworks are universal (Intel + Apple Silicon). Keep only the architecture(s)
+          # Ring is being built for, and strip local symbols. Roughly halves the app.
+          set -e
+          FRAMEWORKS="$TARGET_BUILD_DIR/$WRAPPER_NAME/Contents/Frameworks"
+          [ -d "$FRAMEWORKS" ] || exit 0
+          for fw in "$FRAMEWORKS"/*.framework; do
+            name=$(basename "$fw" .framework)
+            bin="$fw/Versions/Current/$name"
+            [ -f "$bin" ] || bin="$fw/$name"
+            [ -f "$bin" ] || continue
+            have=$(lipo -archs "$bin")
+            set -- $ARCHS
+            if [ $# -eq 1 ] && [ "$have" != "$1" ]; then
+              lipo -thin "$1" "$bin" -output "$bin.thin" && mv "$bin.thin" "$bin"
+            fi
+            strip -x "$bin" 2>/dev/null || true
           done
 
       - name: Re-sign embedded frameworks with Ring's identity
