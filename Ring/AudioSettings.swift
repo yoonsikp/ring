@@ -27,7 +27,7 @@ enum Codec: String, CaseIterable, Identifiable {
 /// App preferences that don't affect the SIP registration. Stored in UserDefaults.
 struct AudioSettings: Equatable {
     /// Software echo canceller. Needed on speakers; turn off with headphones (it can make audio choppy).
-    var echoCancellation = false
+    var echoCancellation = true
     var enabledCodecs: Set<Codec> = Set(Codec.allCases)
     /// Adaptive jitter buffer. Off by default: a fixed buffer of `jitterBufferMs` is used.
     var adaptiveJitterBuffer = false
@@ -49,7 +49,7 @@ struct AudioSettings: Equatable {
     static func load() -> AudioSettings {
         let d = UserDefaults.standard
         var s = AudioSettings()
-        s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? false
+        s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? true
         s.adaptiveJitterBuffer = d.object(forKey: Key.adaptiveJitterBuffer) as? Bool ?? false
         if let ms = d.object(forKey: Key.jitterBufferMs) as? Int {
             s.jitterBufferMs = min(max(ms, jitterBufferRange.lowerBound), jitterBufferRange.upperBound)
