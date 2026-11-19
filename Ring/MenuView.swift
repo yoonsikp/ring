@@ -252,7 +252,7 @@ private struct AccountView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("SIP Account").font(.headline)
+            Text("Account Settings").font(.headline)
 
             field("SIP address", "sip:alice@example.com", $draft.sipAddress)
             VStack(alignment: .leading, spacing: 3) {
