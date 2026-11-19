@@ -76,7 +76,7 @@ private struct MainPage: View {
 
             HStack {
                 Button("Account…") { show(.account) }
-                Button("Settings…") { show(.settings) }
+                Button("Audio…") { show(.settings) }
                 if SIPManager.loggingEnabled {
                     Button("Logs") { NSWorkspace.shared.open(SIPManager.logDirectory) }
                         .help("Open the liblinphone log folder")
@@ -314,7 +314,7 @@ private struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Settings").font(.headline)
+            Text("Audio Settings").font(.headline)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
