@@ -37,3 +37,24 @@ targets:
         SWIFT_VERSION: "5.9"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
+        ENABLE_USER_SCRIPT_SANDBOXING: NO # the post-build step edits the built app
+    postBuildScripts:
+      - name: Remove unused liblinphone media
+        basedOnDependencyAnalysis: false
+        script: |
+          # The SDK ships ~9 MB of sounds. Keep only what Ring uses: the ring tone
+          # (notes_of_the_optimistic.mkv, oldphone-mono.wav fallback), the ringback tone
+          # (ringback.wav) and silence.mkv. Hold music, alternative ring tones, test
+          # recordings and the chat sound go.
+          set -e
+          FW="$TARGET_BUILD_DIR/$WRAPPER_NAME/Contents/Frameworks/linphone.framework"
+          RES="$FW/Versions/A/Resources"
+          [ -d "$RES" ] || { echo "warning: $RES not found, skipping"; exit 0; }
+          for f in dont_wait_too_long.mkv its_a_game.mkv soft_as_snow.mkv house_keeping.mkv \
+                   four_hands_together.mkv leaving_dreams.mkv toy-mono.wav hello16000.wav \
+                   hello8000.wav incoming_chat.wav; do
+            rm -f "$RES/$f"
+          done
+          # The framework's signature covers its resources, so sign it again.
+          codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" \
+            --preserve-metadata=identifier,entitlements,flags "$FW"
