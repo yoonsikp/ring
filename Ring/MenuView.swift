@@ -307,15 +307,10 @@ private struct AccountView: View {
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text("Country").font(.caption).foregroundStyle(.secondary)
-                Picker("Country", selection: $draft.phoneRegion) {
-                    Text("Automatic (\(PhoneFormat.countryName(PhoneFormat.automaticRegion)))").tag("")
-                    Divider()
-                    ForEach(PhoneFormat.countries, id: \.code) { country in
-                        Text(country.name).tag(country.code)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.menu)
+                // Own Equatable view: rebuilding a ~245-item menu on every keystroke in the
+                // other fields made typing laggy. It now only redraws when the country changes.
+                CountryPicker(selection: draft.phoneRegion, onSelect: { draft.phoneRegion = $0 })
+                    .equatable()
             }
 
             DisclosureGroup(isExpanded: $showAdvanced) {
@@ -625,5 +620,26 @@ private final class PaddedTextFieldCell: NSTextFieldCell {
                          delegate: Any?, start selStart: Int, length selLength: Int) {
         super.select(withFrame: padded(rect), in: controlView, editor: textObj,
                      delegate: delegate, start: selStart, length: selLength)
+    }
+}
+
+// MARK: - Country picker
+
+private struct CountryPicker: View, Equatable {
+    let selection: String
+    let onSelect: (String) -> Void
+
+    static func == (a: CountryPicker, b: CountryPicker) -> Bool { a.selection == b.selection }
+
+    var body: some View {
+        Picker("Country", selection: Binding(get: { selection }, set: onSelect)) {
+            Text("Automatic (\(PhoneFormat.countryName(PhoneFormat.automaticRegion)))").tag("")
+            Divider()
+            ForEach(PhoneFormat.countries, id: \.code) { country in
+                Text(country.name).tag(country.code)
+            }
+        }
+        .labelsHidden()
+        .pickerStyle(.menu)
     }
 }
