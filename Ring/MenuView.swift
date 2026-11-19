@@ -143,11 +143,6 @@ private struct CallSection: View {
                     Spacer()
                 }
                 .buttonStyle(.bordered)
-                if !sip.receivedDigits.isEmpty {
-                    Text("Received: \(sip.receivedDigits)")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        .lineLimit(1).truncationMode(.head)
-                }
                 if showKeypad { Keypad() }
                 HangUpButton()
             }
@@ -264,8 +259,6 @@ private struct SettingsView: View {
             Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
                 .font(.caption).foregroundStyle(.secondary)
 
-            Toggle("Play tones for keys the caller presses", isOn: $draft.playReceivedDTMF)
-
             Divider()
 
             Text("Codecs").font(.subheadline.weight(.semibold))
@@ -280,6 +273,26 @@ private struct SettingsView: View {
                                              : "All other codecs are disabled. Changes apply from the next call.")
                 .font(.caption).foregroundStyle(draft.enabledCodecs.isEmpty ? Color.orange : Color.secondary)
 
+            Divider()
+
+            Text("Jitter buffer").font(.subheadline.weight(.semibold))
+            Toggle("Adaptive", isOn: $draft.adaptiveJitterBuffer)
+            if !draft.adaptiveJitterBuffer {
+                Stepper(value: $draft.jitterBufferMs, in: AudioSettings.jitterBufferRange, step: 10) {
+                    HStack(spacing: 4) {
+                        Text("Fixed size")
+                        Spacer()
+                        TextField("", value: $draft.jitterBufferMs, format: .number)
+                            .textFieldStyle(.roundedBorder).frame(width: 52).multilineTextAlignment(.trailing)
+                        Text("ms")
+                    }
+                }
+            }
+            Text(draft.adaptiveJitterBuffer
+                 ? "Grows and shrinks with network conditions."
+                 : "Constant delay. Lower = less lag; too low causes dropouts on a jittery network.")
+                .font(.caption).foregroundStyle(.secondary)
+
             HStack {
                 Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
                 Spacer()
@@ -293,5 +306,9 @@ private struct SettingsView: View {
             }
         }
         .onAppear { draft = sip.audio }
+        .onChange(of: draft.jitterBufferMs) { ms in
+            let r = AudioSettings.jitterBufferRange
+            if !r.contains(ms) { draft.jitterBufferMs = min(max(ms, r.lowerBound), r.upperBound) }
+        }
     }
 }
