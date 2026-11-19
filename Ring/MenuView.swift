@@ -163,10 +163,14 @@ private struct CallSection: View {
             VStack(alignment: .leading, spacing: 10) {
                 callHeader(remote) { Text("Incoming call").foregroundStyle(.secondary) }
                 HStack {
-                    Button("Decline", role: .destructive) { sip.hangUp() }
+                    Button(role: .destructive) { sip.hangUp() } label: {
+                        Label("Decline", systemImage: "phone.down.fill")
+                    }
                         .buttonStyle(.bordered)
                     Spacer()
-                    Button("Answer") { sip.answer() }
+                    Button { sip.answer() } label: {
+                        Label("Answer", systemImage: "phone.fill")
+                    }
                         .buttonStyle(.borderedProminent).tint(.callGreen)
                         .keyboardShortcut(.defaultAction)
                 }
