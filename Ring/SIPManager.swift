@@ -23,6 +23,7 @@ final class SIPManager: ObservableObject {
     @Published private(set) var receivedDigits = ""
     @Published private(set) var lastError: String?
     @Published private(set) var settings = AccountSettings.load()
+    @Published private(set) var audio = AudioSettings.load()
     /// User intent: whether we *want* to be registered (the menu's Connect/Disconnect toggle).
     @Published private(set) var wantsConnection = true
 
@@ -105,6 +106,7 @@ final class SIPManager: ObservableObject {
         iterateTimer = timer
 
         do { try core.start() } catch { lastError = "Core start failed: \(error)" }
+        applyAudio()
         applyAccount()
     }
 
@@ -119,13 +121,27 @@ final class SIPManager: ObservableObject {
 
     func update(settings new: AccountSettings) {
         new.save()
-        var oldAccount = settings, newAccount = new
-        // Audio preferences don't need a re-registration.
-        oldAccount.echoCancellation = false; newAccount.echoCancellation = false
-        oldAccount.playReceivedDTMF = false; newAccount.playReceivedDTMF = false
+        let changed = new != settings
         settings = new
-        core.echoCancellationEnabled = new.echoCancellation // takes effect from the next call
-        if oldAccount != newAccount { applyAccount() }       // only re-register if the account changed
+        if changed { applyAccount() } // only re-register if the account actually changed
+    }
+
+    /// Audio preferences never touch the registration; they apply from the next call.
+    func update(audio new: AudioSettings) {
+        new.save()
+        audio = new
+        applyAudio()
+    }
+
+    private func applyAudio() {
+        core.echoCancellationEnabled = audio.echoCancellation
+        let allowed = Set(audio.enabledCodecs.map { $0.rawValue.uppercased() })
+        for pt in core.audioPayloadTypes {
+            let mime = pt.mimeType.uppercased()
+            // telephone-event carries DTMF (RFC 2833); it isn't a voice codec, so keep it on.
+            let on = mime == "TELEPHONE-EVENT" || allowed.contains(mime)
+            _ = pt.enable(enabled: on)
+        }
     }
 
     func setConnected(_ on: Bool) {
@@ -136,7 +152,6 @@ final class SIPManager: ObservableObject {
     /// Tear down whatever account exists and (re)create the single configured one.
     private func applyAccount() {
         lastError = nil
-        core.echoCancellationEnabled = settings.echoCancellation
         activeAccount = nil
         core.clearAccounts()
         core.clearAllAuthInfo()
@@ -252,7 +267,7 @@ final class SIPManager: ObservableObject {
     /// liblinphone strips from the audio. Show the digit, and play its tone locally if enabled.
     private func handleReceivedDTMF(_ dtmf: Int) {
         guard dtmf > 0, dtmf < 128, let scalar = Unicode.Scalar(UInt32(dtmf)), "0123456789*#ABCD".unicodeScalars.contains(scalar) else { return }
-        if settings.playReceivedDTMF {
+        if audio.playReceivedDTMF {
             core.playDtmf(dtmf: CChar(dtmf), durationMs: 200)
         }
         receivedDigits.append(Character(scalar))

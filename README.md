@@ -11,6 +11,8 @@ which handles SIP, TLS, SRTP and audio.
 - SRTP is **mandatory**: calls that can't use SRTP fail
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Connect/disconnect switch in the popover
+- Settings: echo cancellation, play tones for keys the caller presses (off by default), and codecs —
+  only PCMU, PCMA, G.722 and GSM can be enabled; every other codec is disabled (telephone-event stays on for DTMF)
 
 Requires macOS 13+.
 
@@ -34,8 +36,9 @@ time you place or answer a call.
 |---|---|
 | `Ring/RingApp.swift` | `MenuBarExtra` scene, menu-bar icon, app delegate |
 | `Ring/SIPManager.swift` | Wraps the liblinphone `Core`: account, registration, calls, mute, DTMF |
-| `Ring/MenuView.swift` | Popover UI: status, dialer, call controls, keypad, account form |
-| `Ring/AccountSettings.swift` | Settings in UserDefaults, password in Keychain |
+| `Ring/MenuView.swift` | Popover UI: status, dialer, call controls, keypad, account and settings pages |
+| `Ring/AccountSettings.swift` | Account settings in UserDefaults, password in Keychain |
+| `Ring/AudioSettings.swift` | Echo cancellation, DTMF tones, codec selection |
 | `project.yml` | XcodeGen spec (Info.plist and entitlements are generated from it) |
 
 ## Known gaps / to check on first run

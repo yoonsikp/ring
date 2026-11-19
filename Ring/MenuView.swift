@@ -1,17 +1,21 @@
 import SwiftUI
 import AppKit
 
-/// Contents of the menu bar popover: a main page and an account page.
+/// Contents of the menu bar popover: main, account and settings pages.
 struct MenuView: View {
+    enum Page { case main, account, settings }
+
     @EnvironmentObject private var sip: SIPManager
-    @State private var showingAccount = false
+    @State private var page = Page.main
 
     var body: some View {
         Group {
-            if showingAccount || !sip.settings.isComplete {
-                AccountView(onDone: { showingAccount = false })
+            if page == .account || !sip.settings.isComplete {
+                AccountView(onDone: { page = .main })
+            } else if page == .settings {
+                SettingsView(onDone: { page = .main })
             } else {
-                MainPage(showAccount: { showingAccount = true })
+                MainPage(show: { page = $0 })
             }
         }
         .padding(14)
@@ -23,7 +27,7 @@ struct MenuView: View {
 
 private struct MainPage: View {
     @EnvironmentObject private var sip: SIPManager
-    let showAccount: () -> Void
+    let show: (MenuView.Page) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -38,7 +42,8 @@ private struct MainPage: View {
             Divider()
 
             HStack {
-                Button("Account…", action: showAccount)
+                Button("Account…") { show(.account) }
+                Button("Settings…") { show(.settings) }
                 Button("Logs") { NSWorkspace.shared.open(SIPManager.logDirectory) }
                     .help("Open the liblinphone log folder")
                 Spacer()
@@ -217,12 +222,6 @@ private struct AccountView: View {
                               : "Warning: without TLS the SRTP keys are sent in the clear.")
                 .font(.caption).foregroundStyle(draft.useTLS ? Color.secondary : Color.orange)
 
-            Toggle("Echo cancellation", isOn: $draft.echoCancellation)
-            Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
-                .font(.caption).foregroundStyle(.secondary)
-
-            Toggle("Play tones for keys the caller presses", isOn: $draft.playReceivedDTMF)
-
             HStack {
                 if sip.settings.isComplete {
                     Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
@@ -247,5 +246,52 @@ private struct AccountView: View {
             Text(label).font(.caption).foregroundStyle(.secondary)
             TextField(prompt, text: text).textFieldStyle(.roundedBorder)
         }
+    }
+}
+
+// MARK: - Settings page
+
+private struct SettingsView: View {
+    @EnvironmentObject private var sip: SIPManager
+    @State private var draft = AudioSettings()
+    let onDone: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Settings").font(.headline)
+
+            Toggle("Echo cancellation", isOn: $draft.echoCancellation)
+            Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
+                .font(.caption).foregroundStyle(.secondary)
+
+            Toggle("Play tones for keys the caller presses", isOn: $draft.playReceivedDTMF)
+
+            Divider()
+
+            Text("Codecs").font(.subheadline.weight(.semibold))
+            ForEach(Codec.allCases) { codec in
+                Toggle(codec.label, isOn: Binding(
+                    get: { draft.enabledCodecs.contains(codec) },
+                    set: { on in
+                        if on { draft.enabledCodecs.insert(codec) } else { draft.enabledCodecs.remove(codec) }
+                    }))
+            }
+            Text(draft.enabledCodecs.isEmpty ? "Enable at least one codec."
+                                             : "All other codecs are disabled. Changes apply from the next call.")
+                .font(.caption).foregroundStyle(draft.enabledCodecs.isEmpty ? Color.orange : Color.secondary)
+
+            HStack {
+                Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("Save") {
+                    sip.update(audio: draft)
+                    onDone()
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(draft.enabledCodecs.isEmpty)
+            }
+        }
+        .onAppear { draft = sip.audio }
     }
 }
