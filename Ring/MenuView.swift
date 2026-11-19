@@ -488,7 +488,7 @@ private struct DialField: NSViewRepresentable {
     let format: (String) -> String
 
     func makeNSView(context: Context) -> NSTextField {
-        let field = NSTextField()
+        let field = PaddedTextField()
         field.placeholderString = placeholder
         field.font = .systemFont(ofSize: 15)
         field.controlSize = .large
@@ -551,5 +551,38 @@ private struct DialField: NSViewRepresentable {
             }
             return false
         }
+    }
+}
+
+/// NSTextField whose text sits a little further in from the rounded border. Before macOS 26 the
+/// text nearly touches the border; macOS 26's field already has enough room, so no extra inset.
+private final class PaddedTextField: NSTextField {
+    override class var cellClass: AnyClass? {
+        get { PaddedTextFieldCell.self }
+        set {}
+    }
+}
+
+private final class PaddedTextFieldCell: NSTextFieldCell {
+    private var inset: CGFloat {
+        if #available(macOS 26.0, *) { return 0 }
+        return 1
+    }
+
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        super.drawingRect(forBounds: rect).insetBy(dx: inset, dy: 0)
+    }
+
+    // Keep the caret / editing area in the same place as the drawn text.
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
+                       delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: rect.insetBy(dx: inset, dy: 0), in: controlView, editor: textObj,
+                   delegate: delegate, event: event)
+    }
+
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText,
+                         delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: rect.insetBy(dx: inset, dy: 0), in: controlView, editor: textObj,
+                     delegate: delegate, start: selStart, length: selLength)
     }
 }
