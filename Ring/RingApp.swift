@@ -24,10 +24,17 @@ private struct StatusIcon: View {
     var body: some View {
         // The menu bar label ignores SwiftUI font modifiers, so the call duration is drawn
         // into the image with a monospaced-digit font to keep its width steady.
-        Image(nsImage: sip.showsAnswerButton
-              ? Self.answerButton
-              : clock.elapsed.map { Self.image(for: sip.statusSymbol, time: formatCallDuration($0)) }
-                ?? Self.image(for: sip.statusSymbol))
+        Group {
+            if sip.showsAnswerButton {
+                Image(nsImage: Self.answerButton)
+            } else if let elapsed = clock.elapsed {
+                Image(nsImage: Self.image(for: sip.statusSymbol, time: formatCallDuration(elapsed)))
+            } else if sip.settings.systemMenuBarIcon {
+                Image(systemName: sip.statusSymbol) // macOS draws it: crisp, width varies by state
+            } else {
+                Image(nsImage: Self.image(for: sip.statusSymbol)) // fixed-width canvas
+            }
+        }
         .accessibilityLabel(sip.showsAnswerButton ? "Answer incoming call" : sip.statusText)
         .transaction { $0.animation = nil } // never animate the status item
     }
@@ -87,7 +94,9 @@ private struct StatusIcon: View {
             let s = symbol.size
             let scale = min(1, rect.width / s.width, rect.height / s.height)
             let w = s.width * scale, h = s.height * scale
-            symbol.draw(in: NSRect(x: (rect.width - w) / 2, y: (rect.height - h) / 2, width: w, height: h))
+            // Whole-point origin so the symbol isn't drawn straddling pixels (blurry edges).
+            symbol.draw(in: NSRect(x: ((rect.width - w) / 2).rounded(), y: ((rect.height - h) / 2).rounded(),
+                                   width: w, height: h))
             return true
         }
         image.isTemplate = true // adapts to light/dark menu bar like a normal icon
