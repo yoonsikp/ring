@@ -65,8 +65,13 @@ codesign -dv "$APP" 2>&1 | grep -E "Authority=Developer ID|TeamIdentifier"
 echo "==> Notarizing (usually a few minutes)"
 rm -f "$ZIP"
 ditto -c -k --keepParent "$APP" "$ZIP"
-if ! xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait; then
-  echo "Notarization failed. See the log with: xcrun notarytool log <submission id> --keychain-profile $PROFILE" >&2
+# notarytool exits 0 even when Apple marks the submission Invalid, so check the status ourselves
+# and print Apple's log (which lists every problem) when it isn't Accepted.
+SUBMIT_OUT=$(xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait 2>&1 | tee /dev/stderr)
+SUBMIT_ID=$(echo "$SUBMIT_OUT" | awk '$1 == "id:" {print $2; exit}')
+if ! echo "$SUBMIT_OUT" | grep -q "status: Accepted"; then
+  echo "==> Notarization was not accepted. Apple's log:" >&2
+  [ -n "$SUBMIT_ID" ] && xcrun notarytool log "$SUBMIT_ID" --keychain-profile "$PROFILE" >&2
   exit 1
 fi
 xcrun stapler staple "$APP"
