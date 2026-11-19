@@ -58,9 +58,10 @@ final class CallNotifier: NSObject, UNUserNotificationCenterDelegate {
         let action = response.actionIdentifier
         Task { @MainActor in
             switch action {
-            case Self.answerAction: self.onAnswer()
+            // Clicking the notification itself also answers.
+            case Self.answerAction, UNNotificationDefaultActionIdentifier: self.onAnswer()
             case Self.declineAction: self.onDecline()
-            default: break // clicking the banner itself does nothing
+            default: break // e.g. dismissed
             }
             completionHandler()
         }

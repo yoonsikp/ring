@@ -54,7 +54,8 @@ time you place or answer a call.
 
 ## Incoming calls
 
-- A notification **Incoming call** appears with the caller, and **Answer** / **Decline** buttons.
+- A notification **Incoming call** appears with the caller, and **Answer** / **Decline** buttons;
+  clicking the notification itself also answers.
 - If the popover is closed, the menu bar icon turns into a **green answer button**; clicking it
   answers the call and opens the popover on the call controls.
 - The caller's number is put in the number field, ready to call back, whether you answer, decline
