@@ -536,22 +536,18 @@ final class SIPManager: ObservableObject {
         }
     }
 
-    /// Readable reason for a failed call, with the SIP code, e.g. "forbidden (403). Check the number."
+    /// Standard SIP reason with its code, e.g. "Forbidden (403)".
     private static func callFailure(_ info: ErrorInfo?, message: String) -> String {
         let code = info?.protocolCode ?? 0
-        let phrase = (info?.phrase).flatMap { $0.isEmpty ? nil : $0 } ?? (message.isEmpty ? "unknown error" : message)
-        let codeText = code > 0 ? " (\(code))" : ""
-        switch code {
-        case 403: return "forbidden\(codeText). Check the number, or that your account may call it."
-        case 404: return "number not found\(codeText). Check the number."
-        case 480: return "not available right now\(codeText)."
-        case 484: return "incomplete number\(codeText)."
-        case 486, 600: return "busy\(codeText)."
-        case 488, 606: return "not acceptable\(codeText): no common codec or encryption."
-        case 503: return "service unavailable\(codeText). Try again shortly."
-        case 603: return "declined\(codeText)."
-        default: return phrase.prefix(1).lowercased() + phrase.dropFirst() + codeText
-        }
+        let standard: [Int: String] = [
+            403: "Forbidden", 404: "Not Found", 408: "Request Timeout", 480: "Temporarily Unavailable",
+            484: "Address Incomplete", 486: "Busy", 488: "Not Acceptable", 500: "Server Error",
+            503: "Service Unavailable", 600: "Busy", 603: "Declined", 606: "Not Acceptable",
+        ]
+        let phrase = standard[code]
+            ?? (info?.phrase).flatMap { $0.isEmpty ? nil : $0 }
+            ?? (message.isEmpty ? "Unknown error" : message)
+        return code > 0 ? "\(phrase) (\(code))" : phrase
     }
 
     /// liblinphone ends a call with an I/O-type reason when the network failed, including when
@@ -587,11 +583,11 @@ final class SIPManager: ObservableObject {
     }
 
     /// What to put in the number field to call this address back: just the number for phone
-    /// numbers (voip.ms sends e.g. sip:4313347050@…), otherwise user@domain.
+    /// numbers (e.g. sip:4313347050@…), otherwise user@domain.
     private static func callbackTarget(_ a: Address) -> String {
         guard let user = a.username, !user.isEmpty else { return a.asStringUriOnly() }
         if PhoneFormat.looksLikeNumber(user) {
-            // Prefer the display name when it's the full number (voip.ms: "+14313347050"
+            // Prefer the display name when it's the full number (e.g. "+14313347050"
             // <sip:4313347050@…>), so the country is known; format it for the field.
             if let name = a.displayName, name.hasPrefix("+"), let formatted = PhoneFormat.display(name) {
                 return formatted

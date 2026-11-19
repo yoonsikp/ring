@@ -55,7 +55,7 @@ enum PhoneFormat {
     }
 
     /// What to actually dial: formatting stripped. A +number in your own country is dialled in
-    /// national form (e.g. +1 431-334-7050 → 4313347050), which providers like voip.ms accept.
+    /// national form (e.g. +1 431-334-7050 → 4313347050), which SIP providers generally accept.
     static func dialString(_ input: String) -> String {
         let trimmed = input.trimmingCharacters(in: .whitespaces)
         guard looksLikeNumber(trimmed) else { return trimmed }
