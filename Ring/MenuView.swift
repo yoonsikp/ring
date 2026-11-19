@@ -120,7 +120,7 @@ private struct StatusHeader: View {
                     Circle().fill(dotColor).frame(width: 8, height: 8)
                     Text(sip.statusText).font(.headline).lineLimit(2)
                 }
-                Text(sip.settings.normalizedAddress).font(.caption).foregroundStyle(.secondary)
+                Text(sip.settings.normalizedAddress).font(.subheadline).foregroundStyle(.secondary)
                     .lineLimit(1).truncationMode(.middle)
             }
             Spacer(minLength: 8)
