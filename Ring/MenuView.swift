@@ -585,7 +585,7 @@ private final class PaddedTextFieldCell: NSTextFieldCell {
         return 2
     }
     /// Same on the right, plus room for the clear (x) button so text never runs under it.
-    private var rightInset: CGFloat { leftInset + 16 }
+    private var rightInset: CGFloat { leftInset + 10 }
 
     private func padded(_ rect: NSRect) -> NSRect {
         var r = rect
