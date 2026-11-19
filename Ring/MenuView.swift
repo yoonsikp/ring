@@ -8,6 +8,8 @@ struct MenuView: View {
     @EnvironmentObject private var sip: SIPManager
     @State private var page = Page.main
     @State private var window: NSWindow?
+    /// Bumped each time the popover opens, so the home page can focus the number field.
+    @State private var openCount = 0
 
     var body: some View {
         Group {
@@ -16,7 +18,7 @@ struct MenuView: View {
             } else if page == .settings {
                 SettingsView(onDone: { page = .main })
             } else {
-                MainPage(show: { page = $0 })
+                MainPage(show: { page = $0 }, openCount: openCount)
             }
         }
         .padding(14)
@@ -26,9 +28,12 @@ struct MenuView: View {
         // page for next time. Losing focus, e.g. to a system prompt, doesn't count. While no
         // account is configured the account form is shown regardless, so first-run setup is kept.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didChangeOcclusionStateNotification)) { note in
-            guard let window, note.object as? NSWindow === window,
-                  !window.occlusionState.contains(.visible) else { return }
-            page = .main
+            guard let window, note.object as? NSWindow === window else { return }
+            if window.occlusionState.contains(.visible) {
+                openCount += 1
+            } else {
+                page = .main
+            }
         }
     }
 }
@@ -55,6 +60,7 @@ private struct WindowReader: NSViewRepresentable {
 private struct MainPage: View {
     @EnvironmentObject private var sip: SIPManager
     let show: (MenuView.Page) -> Void
+    let openCount: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -65,7 +71,7 @@ private struct MainPage: View {
             }
 
             Divider()
-            CallSection()
+            CallSection(openCount: openCount)
             Divider()
 
             HStack {
@@ -113,8 +119,10 @@ private struct StatusHeader: View {
 
 private struct CallSection: View {
     @EnvironmentObject private var sip: SIPManager
+    let openCount: Int
     @State private var target = ""
     @State private var showKeypad = false
+    @FocusState private var numberFocused: Bool
 
     var body: some View {
         switch sip.callPhase {
@@ -122,12 +130,17 @@ private struct CallSection: View {
             HStack {
                 TextField("Number or SIP address", text: $target)
                     .textFieldStyle(.roundedBorder)
+                    .focused($numberFocused)
                     .onSubmit(call)
                 Button(action: call) { Image(systemName: "phone.fill") }
                     .buttonStyle(.borderedProminent).tint(.green)
                     .disabled(target.isEmpty || sip.registration != .connected)
             }
-            .onAppear { showKeypad = false }
+            .onAppear {
+                showKeypad = false
+                focusNumber()
+            }
+            .onChange(of: openCount) { _ in focusNumber() }
 
         case .incoming(let remote):
             VStack(alignment: .leading, spacing: 8) {
@@ -180,6 +193,11 @@ private struct CallSection: View {
 
     private func call() {
         sip.dial(target)
+    }
+
+    /// Deferred a tick so the popover window is key before we take focus.
+    private func focusNumber() {
+        DispatchQueue.main.async { numberFocused = true }
     }
 
     private static func format(_ t: TimeInterval) -> String {
