@@ -102,14 +102,18 @@ private struct StatusHeader: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Circle().fill(dotColor).frame(width: 8, height: 8)
+        // Switch is centred against both lines; the address starts at the left edge
+        // (not indented under the dot) so long addresses get the full width.
+        HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(sip.statusText).font(.headline).lineLimit(2)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Circle().fill(dotColor).frame(width: 8, height: 8)
+                    Text(sip.statusText).font(.headline).lineLimit(2)
+                }
                 Text(sip.settings.normalizedAddress).font(.caption).foregroundStyle(.secondary)
                     .lineLimit(1).truncationMode(.middle)
             }
-            Spacer()
+            Spacer(minLength: 8)
             Toggle("", isOn: Binding(get: { sip.wantsConnection }, set: { sip.setConnected($0) }))
                 .toggleStyle(.switch).controlSize(.small).labelsHidden()
                 .help(sip.wantsConnection ? "Disconnect" : "Connect")
