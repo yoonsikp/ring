@@ -47,6 +47,13 @@ final class SIPManager: ObservableObject {
             options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
             reason: "Listening for incoming SIP calls")
 
+        // Keep liblinphone's databases in our own folder, not the shared ~/Library/Application Support/linphone.
+        let dataDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Ring", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dataDir, withIntermediateDirectories: true)
+        Factory.Instance.dataDir = dataDir.path
+        Factory.Instance.configDir = dataDir.path
+
         do {
             // No config path: nothing (in particular no password) is persisted by liblinphone.
             core = try Factory.Instance.createCore(configPath: nil, factoryConfigPath: nil, systemContext: nil)
@@ -65,6 +72,11 @@ final class SIPManager: ObservableObject {
         core.maxCalls = 1                      // one call at a time; extra INVITEs get 486 Busy
         core.videoCaptureEnabled = false       // audio only
         core.videoDisplayEnabled = false
+        if let policy = try? Factory.Instance.createVideoActivationPolicy() {
+            policy.automaticallyInitiate = false
+            policy.automaticallyAccept = false
+            core.videoActivationPolicy = policy
+        }
         try? core.setMediaencryption(newValue: .SRTP)
         core.mediaEncryptionMandatory = true   // refuse calls that can't do SRTP
 
