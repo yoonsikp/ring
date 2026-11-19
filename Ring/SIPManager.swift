@@ -16,8 +16,8 @@ final class SIPManager: ObservableObject {
         case active(remote: String, since: Date)
     }
 
-    @Published private(set) var registration: Registration = .disconnected
-    @Published private(set) var callPhase: CallPhase = .idle
+    @Published private(set) var registration: Registration = .disconnected { didSet { updatePowerMode() } }
+    @Published private(set) var callPhase: CallPhase = .idle { didSet { updatePowerMode() } }
     @Published private(set) var isMuted = false
     @Published private(set) var lastError: String?
     @Published private(set) var settings = AccountSettings.load()
@@ -28,9 +28,12 @@ final class SIPManager: ObservableObject {
     private var core: Core!
     private var delegate: CoreDelegateStub!
     private var iterateTimer: Timer?
+    /// nil until first set; true while a call is ringing/active or we're registering.
+    private var isBusy: Bool?
     /// The single account we created; events from previously removed accounts are ignored.
     private var activeAccount: Account?
     /// Keeps App Nap from throttling us, so we keep the SIP connection alive and hear incoming calls.
+    /// Latency-critical only while busy; see `updatePowerMode()`.
     private var activity: NSObjectProtocol?
 
     /// Detailed logging is only on when launched with `--logging` (logs contain SRTP keys).
@@ -43,10 +46,6 @@ final class SIPManager: ObservableObject {
 
     init() {
         Self.applyLogging(Self.loggingEnabled) // before the core exists, so startup is logged too
-
-        activity = ProcessInfo.processInfo.beginActivity(
-            options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
-            reason: "Listening for incoming SIP calls")
 
         // Keep liblinphone's databases in our own folder, not the shared ~/Library/Application Support/linphone.
         let dataDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -78,6 +77,14 @@ final class SIPManager: ObservableObject {
             policy.automaticallyAccept = false
             core.videoActivationPolicy = policy
         }
+        // Features Ring doesn't use: chat, end-to-end message encryption, friend lists.
+        core.disableChat(denyReason: .NotImplemented)
+        core.limeX3DhEnabled = false
+        core.friendListSubscriptionEnabled = false
+        // No bitrate adaptation (pointless with fixed-rate codecs) and no RTCP-XR call reports.
+        core.adaptiveRateControlEnabled = false
+        core.config?.setBool(section: "rtp", key: "rtcp_xr_enabled", value: false)
+
         try? core.setMediaencryption(newValue: .SRTP)
         core.mediaEncryptionMandatory = true   // refuse calls that can't do SRTP
 
@@ -91,18 +98,42 @@ final class SIPManager: ObservableObject {
         )
         core.addDelegate(delegate: delegate)
 
-        // Drive the core ourselves on the main run loop (in .common mode so it keeps
-        // running while the menu is open).
+        // We drive the core ourselves; the rate depends on whether a call is going on.
         core.autoIterateEnabled = false
-        let timer = Timer(timeInterval: 0.02, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.core.iterate() }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        iterateTimer = timer
 
         do { try core.start() } catch { lastError = "Core start failed: \(error)" }
         applyAudio()
         applyAccount()
+        updatePowerMode()
+    }
+
+    // MARK: - Power
+
+    /// Fast iteration and latency-critical activity only while ringing, in a call or registering.
+    /// When idle, iterate 5x/s with timer tolerance so macOS can coalesce wake-ups: an incoming
+    /// INVITE is then picked up within ~0.25 s, and keep-alives/re-registration don't need more.
+    private func updatePowerMode() {
+        guard core != nil else { return } // property observers can fire before the core exists
+        let busy = callPhase != .idle || registration == .connecting
+        guard busy != isBusy else { return }
+        isBusy = busy
+
+        iterateTimer?.invalidate()
+        let timer = Timer(timeInterval: busy ? 0.02 : 0.2, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.core.iterate() }
+        }
+        timer.tolerance = busy ? 0.002 : 0.05
+        RunLoop.main.add(timer, forMode: .common) // .common: keeps running while the menu is open
+        iterateTimer = timer
+
+        // Still opt out of App Nap when idle (so we don't miss calls), but only ask for
+        // latency-critical scheduling while busy.
+        if let activity { ProcessInfo.processInfo.endActivity(activity) }
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: busy ? [.userInitiatedAllowingIdleSystemSleep, .latencyCritical]
+                          : [.userInitiatedAllowingIdleSystemSleep],
+            reason: busy ? "SIP call in progress" : "Listening for incoming SIP calls")
+        // Note: no direct core.iterate() here; this often runs inside a core callback.
     }
 
     func shutdown() {
