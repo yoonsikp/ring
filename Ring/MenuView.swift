@@ -221,6 +221,8 @@ private struct AccountView: View {
             Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
                 .font(.caption).foregroundStyle(.secondary)
 
+            Toggle("Play tones for keys the caller presses", isOn: $draft.playReceivedDTMF)
+
             HStack {
                 if sip.settings.isComplete {
                     Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)

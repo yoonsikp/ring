@@ -120,7 +120,9 @@ final class SIPManager: ObservableObject {
     func update(settings new: AccountSettings) {
         new.save()
         var oldAccount = settings, newAccount = new
+        // Audio preferences don't need a re-registration.
         oldAccount.echoCancellation = false; newAccount.echoCancellation = false
+        oldAccount.playReceivedDTMF = false; newAccount.playReceivedDTMF = false
         settings = new
         core.echoCancellationEnabled = new.echoCancellation // takes effect from the next call
         if oldAccount != newAccount { applyAccount() }       // only re-register if the account changed
@@ -247,10 +249,12 @@ final class SIPManager: ObservableObject {
     }
 
     /// The remote side's DTMF arrives as RTP telephone-events (RFC 2833) or SIP INFO, which
-    /// liblinphone strips from the audio, so play the tone locally ourselves.
+    /// liblinphone strips from the audio. Show the digit, and play its tone locally if enabled.
     private func handleReceivedDTMF(_ dtmf: Int) {
         guard dtmf > 0, dtmf < 128, let scalar = Unicode.Scalar(UInt32(dtmf)), "0123456789*#ABCD".unicodeScalars.contains(scalar) else { return }
-        core.playDtmf(dtmf: CChar(dtmf), durationMs: 200)
+        if settings.playReceivedDTMF {
+            core.playDtmf(dtmf: CChar(dtmf), durationMs: 200)
+        }
         receivedDigits.append(Character(scalar))
     }
 

@@ -13,6 +13,8 @@ struct AccountSettings: Equatable {
     var useTLS: Bool = true
     /// Software echo canceller. Needed on speakers; turn off with headphones (it can make audio choppy).
     var echoCancellation: Bool = true
+    /// Play tones for keys the other side presses. Off by default; digits are shown either way.
+    var playReceivedDTMF: Bool = false
 
     var isComplete: Bool { !sipAddress.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
 
@@ -26,6 +28,7 @@ struct AccountSettings: Equatable {
     private enum Key {
         static let sipAddress = "sipAddress", username = "username", server = "server", useTLS = "useTLS"
         static let echoCancellation = "echoCancellation"
+        static let playReceivedDTMF = "playReceivedDTMF"
     }
 
     static func load() -> AccountSettings {
@@ -36,6 +39,7 @@ struct AccountSettings: Equatable {
         s.server = d.string(forKey: Key.server) ?? ""
         s.useTLS = d.object(forKey: Key.useTLS) as? Bool ?? true
         s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? true
+        s.playReceivedDTMF = d.bool(forKey: Key.playReceivedDTMF)
         s.password = Keychain.read() ?? ""
         return s
     }
@@ -47,6 +51,7 @@ struct AccountSettings: Equatable {
         d.set(server, forKey: Key.server)
         d.set(useTLS, forKey: Key.useTLS)
         d.set(echoCancellation, forKey: Key.echoCancellation)
+        d.set(playReceivedDTMF, forKey: Key.playReceivedDTMF)
         if password.isEmpty { Keychain.delete() } else { Keychain.write(password) }
     }
 }
