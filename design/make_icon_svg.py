@@ -3,7 +3,7 @@
 Render AppIcon.svg to a 1024x1024 PNG (e.g. in a browser) and resize it into
 Ring/Assets.xcassets/AppIcon.appiconset (16-512 pt, 1x and 2x)."""
 import math, os
-LROT=os.environ.get("LROT","-12"); RROT=os.environ.get("RROT","12"); TILT=os.environ.get("TILT","-8")
+LROT=os.environ.get("LROT","-14"); RROT=os.environ.get("RROT","14"); TILT=os.environ.get("TILT","-22")
 OUT=os.environ.get("OUT","AppIcon.svg")
 
 S = 1024          # canvas
@@ -41,19 +41,22 @@ for lat in (-60, -30, 0, 30, 60):
 # Handset, drawn horizontally around (0,0) then rotated and placed over the globe.
 handset = f"""
   <g id="handset">
-    <!-- handle: a deep arch; the ear and chin sit on its concave (lower) side -->
-    <path d="M -170 40 C -175 -175, 175 -175, 170 40" fill="none" stroke="#34C759"
-          stroke-width="104" stroke-linecap="butt"/>
-    <!-- earpiece / mouthpiece: wider than the handle; their faces (darker) point into the
-         curve, towards the face, tilted slightly towards each other -->
-    <g transform="translate(-178 70) rotate({LROT})">
-      <path d="M -120 -30 C -120 -70, 120 -70, 120 -30 L 112 30 C 108 50, -108 50, -112 30 Z" fill="#34C759"/>
-      <rect x="-104" y="26" width="208" height="26" rx="13" fill="#248A3D"/>
+    <!-- handle: long and gently arched -->
+    <path d="M -215 -6 Q 0 -112 215 -6" fill="none" stroke="url(#hsBody)" stroke-width="86"
+          stroke-linecap="round"/>
+    <!-- earpiece / mouthpiece: bell-shaped cups flaring towards the face (the concave side),
+         tilted slightly towards each other; the darker ellipse is the opening -->
+    <g transform="translate(-222 32) rotate({LROT})">
+      <path d="M -52 -50 L 52 -50 C 72 -50 82 -40 88 -24 L 106 34 C 110 50 100 60 84 60 L -84 60 C -100 60 -110 50 -106 34 L -88 -24 C -82 -40 -72 -50 -52 -50 Z" fill="url(#hsBody)"/>
+      <ellipse cx="0" cy="56" rx="96" ry="15" fill="url(#hsFace)"/>
     </g>
-    <g transform="translate(178 70) rotate({RROT})">
-      <path d="M -120 -30 C -120 -70, 120 -70, 120 -30 L 112 30 C 108 50, -108 50, -112 30 Z" fill="#34C759"/>
-      <rect x="-104" y="26" width="208" height="26" rx="13" fill="#248A3D"/>
+    <g transform="translate(222 32) rotate({RROT})">
+      <path d="M -52 -50 L 52 -50 C 72 -50 82 -40 88 -24 L 106 34 C 110 50 100 60 84 60 L -84 60 C -100 60 -110 50 -106 34 L -88 -24 C -82 -40 -72 -50 -52 -50 Z" fill="url(#hsBody)"/>
+      <ellipse cx="0" cy="56" rx="96" ry="15" fill="url(#hsFace)"/>
     </g>
+    <!-- soft highlight along the top of the handle -->
+    <path d="M -170 -44 Q 0 -122 170 -44" fill="none" stroke="#fff" stroke-opacity="0.35"
+          stroke-width="12" stroke-linecap="round"/>
   </g>
 """
 
@@ -63,18 +66,24 @@ svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{S}" height="{S}" viewB
       <stop offset="0" stop-color="#2F6FE4"/>
       <stop offset="1" stop-color="#1D4FB8"/>
     </linearGradient>
-    <linearGradient id="globe" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#38BDF8"/>
-      <stop offset="1" stop-color="#0EA5E9"/>
-    </linearGradient>
+    <radialGradient id="globe" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="0.55" stop-color="#1FAEE8"/>
+      <stop offset="1" stop-color="#0B6FBF"/>
+    </radialGradient>
     <radialGradient id="globeShine" cx="0.33" cy="0.26" r="0.38">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.55"/>
+      <stop offset="0" stop-color="#fff" stop-opacity="0.30"/>
       <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="hsBody" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5EE07F"/>
-      <stop offset="1" stop-color="#1FA544"/>
+      <stop offset="0" stop-color="#6BE08A"/>
+      <stop offset="0.55" stop-color="#34C759"/>
+      <stop offset="1" stop-color="#1F9E43"/>
     </linearGradient>
+    <radialGradient id="hsFace" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#1B7F37"/>
+      <stop offset="1" stop-color="#145F29"/>
+    </radialGradient>
     <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
       <stop offset="0.5" stop-color="#fff" stop-opacity="0"/>
@@ -86,7 +95,7 @@ svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{S}" height="{S}" viewB
     </filter>
     <!-- white outline around the handset (separates it from the globe), then a soft shadow -->
     <filter id="hsShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feMorphology in="SourceAlpha" operator="dilate" radius="14" result="grown"/>
+      <feMorphology in="SourceAlpha" operator="dilate" radius="11" result="grown"/>
       <feFlood flood-color="#fff"/>
       <feComposite in2="grown" operator="in" result="outline"/>
       <feMerge result="outlined"><feMergeNode in="outline"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -109,11 +118,12 @@ svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{S}" height="{S}" viewB
     <line x1="{gx}" y1="{gy - gr}" x2="{gx}" y2="{gy + gr}"/>
     {parallels}
   </g>
-  <circle cx="{gx}" cy="{gy}" r="{gr - 5}" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="10"/>
+  <circle cx="{gx}" cy="{gy}" r="{gr}" fill="url(#globeShine)"/>
+  <circle cx="{gx}" cy="{gy}" r="{gr - 5}" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="10"/>
 
   <!-- handset over the globe -->
   <defs>{handset}</defs>
-  <g transform="translate({C} {C + 40}) rotate({TILT}) scale(0.9)" filter="url(#hsShadow)">
+  <g transform="translate({C} {C + 40}) rotate({TILT}) scale(0.92)" filter="url(#hsShadow)">
     <use href="#handset"/>
   </g>
 </svg>
