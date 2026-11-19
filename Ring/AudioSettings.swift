@@ -29,8 +29,8 @@ struct AudioSettings: Equatable {
     /// Software echo canceller. Needed on speakers; turn off with headphones (it can make audio choppy).
     var echoCancellation = false
     var enabledCodecs: Set<Codec> = Set(Codec.allCases)
-    /// Adaptive jitter buffer (liblinphone default). When off, a fixed buffer of `jitterBufferMs` is used.
-    var adaptiveJitterBuffer = true
+    /// Adaptive jitter buffer. Off by default: a fixed buffer of `jitterBufferMs` is used.
+    var adaptiveJitterBuffer = false
     var jitterBufferMs = 90
     /// Extra gain on incoming audio, in dB (plain amplification, not compression).
     var speakerBoostDb = 3
@@ -50,7 +50,7 @@ struct AudioSettings: Equatable {
         let d = UserDefaults.standard
         var s = AudioSettings()
         s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? false
-        s.adaptiveJitterBuffer = d.object(forKey: Key.adaptiveJitterBuffer) as? Bool ?? true
+        s.adaptiveJitterBuffer = d.object(forKey: Key.adaptiveJitterBuffer) as? Bool ?? false
         if let ms = d.object(forKey: Key.jitterBufferMs) as? Int {
             s.jitterBufferMs = min(max(ms, jitterBufferRange.lowerBound), jitterBufferRange.upperBound)
         }
