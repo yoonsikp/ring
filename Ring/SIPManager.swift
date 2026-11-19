@@ -140,6 +140,16 @@ final class SIPManager: ObservableObject {
         }
     }
 
+    /// Set the speaker boost immediately (used while dragging the slider), without saving.
+    func previewSpeakerBoost(_ db: Int) {
+        core.playbackGainDb = Float(db)
+    }
+
+    /// Put the speaker boost back to the saved value (e.g. after Cancel).
+    func restoreSpeakerBoost() {
+        core.playbackGainDb = Float(audio.speakerBoostDb)
+    }
+
     private func applyAudio() {
         core.echoCancellationEnabled = audio.echoCancellation
         core.playbackGainDb = Float(audio.speakerBoostDb)

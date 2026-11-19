@@ -173,20 +173,22 @@ private struct CallSection: View {
                             .monospacedDigit().foregroundStyle(.secondary)
                     }
                 }
+                HangUpButton()
                 HStack {
+                    // Equal halves, so the layout doesn't shift between "Mute" and "Unmute".
                     Button { sip.toggleMute() } label: {
                         Label(sip.isMuted ? "Unmute" : "Mute",
                               systemImage: sip.isMuted ? "mic.slash.fill" : "mic.fill")
+                            .frame(maxWidth: .infinity)
                     }
                     .tint(sip.isMuted ? .orange : nil)
                     Button { showKeypad.toggle() } label: {
                         Label("Keypad", systemImage: "circle.grid.3x3.fill")
+                            .frame(maxWidth: .infinity)
                     }
-                    Spacer()
                 }
                 .buttonStyle(.bordered)
                 if showKeypad { Keypad() }
-                HangUpButton()
             }
         }
     }
@@ -330,10 +332,6 @@ private struct SettingsView: View {
                     }
                 }
             }
-            Text(draft.adaptiveJitterBuffer
-                 ? "Grows and shrinks with network conditions."
-                 : "Constant delay. Lower = less lag; too low causes dropouts on a jittery network.")
-                .font(.caption).foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
@@ -343,7 +341,10 @@ private struct SettingsView: View {
                         .monospacedDigit().foregroundStyle(.secondary)
                 }
                 Slider(value: Binding(get: { Double(draft.speakerBoostDb) },
-                                      set: { draft.speakerBoostDb = Int($0.rounded()) }),
+                                      set: {
+                                          draft.speakerBoostDb = Int($0.rounded())
+                                          sip.previewSpeakerBoost(draft.speakerBoostDb) // live, incl. during a call
+                                      }),
                        in: Double(AudioSettings.speakerBoostRange.lowerBound)...Double(AudioSettings.speakerBoostRange.upperBound),
                        step: 1)
                 Text("Makes the caller louder. Too much can distort loud voices.")
@@ -377,6 +378,9 @@ private struct SettingsView: View {
             }
         }
         .onAppear { draft = sip.audio }
+        // Leaving without Save (Cancel, or the popover closing) drops the previewed boost;
+        // after Save this just re-applies the new saved value.
+        .onDisappear { sip.restoreSpeakerBoost() }
         .onChange(of: draft.jitterBufferMs) { ms in
             let r = AudioSettings.jitterBufferRange
             if !r.contains(ms) { draft.jitterBufferMs = min(max(ms, r.lowerBound), r.upperBound) }

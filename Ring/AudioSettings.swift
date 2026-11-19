@@ -36,7 +36,7 @@ struct AudioSettings: Equatable {
     var speakerBoostDb = 0
 
     static let jitterBufferRange = 20...500
-    static let speakerBoostRange = 0...12
+    static let speakerBoostRange = 0...6
 
     private enum Key {
         static let echoCancellation = "echoCancellation"
