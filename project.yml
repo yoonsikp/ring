@@ -29,6 +29,9 @@ targets:
       path: Ring/Ring.entitlements
       properties:
         com.apple.security.device.audio-input: true
+        # Let the hardened runtime load the linphone SDK frameworks, which are signed with a
+        # different Team ID than Ring (ad-hoc builds have none).
+        com.apple.security.cs.disable-library-validation: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yoonsikp.Ring
