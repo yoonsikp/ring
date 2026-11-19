@@ -22,13 +22,10 @@ private struct StatusIcon: View {
     @ObservedObject var clock: CallClock
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(nsImage: Self.image(for: sip.statusSymbol))
-            // Call duration while in a call: m:ss, or h:mm:ss after an hour.
-            if let elapsed = clock.elapsed {
-                Text(formatCallDuration(elapsed)).monospacedDigit()
-            }
-        }
+        // The menu bar label ignores SwiftUI font modifiers, so the call duration is drawn
+        // into the image with a monospaced-digit font to keep its width steady.
+        Image(nsImage: clock.elapsed.map { Self.image(for: sip.statusSymbol, time: formatCallDuration($0)) }
+                       ?? Self.image(for: sip.statusSymbol))
         .accessibilityLabel(sip.statusText)
         .transaction { $0.animation = nil } // never animate the status item
     }
@@ -37,6 +34,25 @@ private struct StatusIcon: View {
     /// never changes size (the SF Symbols for each state have different widths).
     private static var cache: [String: NSImage] = [:]
     private static let canvas = NSSize(width: 20, height: 16)
+
+    /// Icon followed by the call duration (m:ss / h:mm:ss), as one template image.
+    private static func image(for name: String, time: String) -> NSImage {
+        let icon = image(for: name)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+        let text = NSAttributedString(string: time, attributes: [.font: font, .foregroundColor: NSColor.black])
+        let textSize = text.size()
+        let gap: CGFloat = 4
+        let size = NSSize(width: ceil(canvas.width + gap + textSize.width),
+                          height: max(canvas.height, ceil(textSize.height)))
+        let result = NSImage(size: size, flipped: false) { rect in
+            icon.draw(in: NSRect(x: 0, y: (rect.height - canvas.height) / 2,
+                                 width: canvas.width, height: canvas.height))
+            text.draw(at: NSPoint(x: canvas.width + gap, y: (rect.height - textSize.height) / 2))
+            return true
+        }
+        result.isTemplate = true // tinted for light/dark menu bar like the icon
+        return result
+    }
 
     private static func image(for name: String) -> NSImage {
         if let cached = cache[name] { return cached }
