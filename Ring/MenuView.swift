@@ -10,6 +10,8 @@ struct MenuView: View {
     @State private var window: NSWindow?
     /// Bumped each time the popover opens, so the home page can focus the number field.
     @State private var openCount = 0
+    /// Catches Escape anywhere in the popover (any page, during calls) while it's open.
+    @State private var escapeMonitor: Any?
 
     var body: some View {
         Group {
@@ -35,8 +37,19 @@ struct MenuView: View {
             sip.popoverVisibilityChanged(visible) // answers a ringing call if opened via the green icon
             if visible {
                 openCount += 1
+                if escapeMonitor == nil {
+                    escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                        guard event.keyCode == 53, event.window === window else { return event } // Esc
+                        MenuBarPopover.close(window)
+                        return nil
+                    }
+                }
             } else {
                 page = .main
+                if let monitor = escapeMonitor {
+                    NSEvent.removeMonitor(monitor)
+                    escapeMonitor = nil
+                }
             }
         }
     }
@@ -545,20 +558,6 @@ private struct DialField: NSViewRepresentable {
         init(_ parent: DialField) { self.parent = parent }
         func syncPrevious(_ text: String) { previous = text }
 
-        /// Ring's menu bar icon (the app has a single status item).
-        static func statusItemButton() -> NSStatusBarButton? {
-            func find(_ view: NSView?) -> NSStatusBarButton? {
-                guard let view else { return nil }
-                if let button = view as? NSStatusBarButton { return button }
-                for sub in view.subviews { if let b = find(sub) { return b } }
-                return nil
-            }
-            for window in NSApp.windows where window.className.contains("StatusBarWindow") {
-                if let button = find(window.contentView) { return button }
-            }
-            return nil
-        }
-
         private var previous = ""
 
         func controlTextDidChange(_ note: Notification) {
@@ -586,11 +585,7 @@ private struct DialField: NSViewRepresentable {
             // sync; closing the window directly left the icon selected and needing two clicks.
             if selector == #selector(NSResponder.cancelOperation(_:)), let window = control.window {
                 window.makeFirstResponder(nil)
-                if let button = Self.statusItemButton() {
-                    button.performClick(nil)
-                } else {
-                    window.close() // fallback
-                }
+                MenuBarPopover.close(window)
                 return true
             }
             return false
@@ -659,5 +654,34 @@ private struct CountryPicker: View, Equatable {
         }
         .labelsHidden()
         .pickerStyle(.menu)
+    }
+}
+
+// MARK: - Closing the popover
+
+@MainActor
+enum MenuBarPopover {
+    /// Ring's menu bar icon (the app has a single status item).
+    static func statusItemButton() -> NSStatusBarButton? {
+        func find(_ view: NSView?) -> NSStatusBarButton? {
+            guard let view else { return nil }
+            if let button = view as? NSStatusBarButton { return button }
+            for sub in view.subviews { if let b = find(sub) { return b } }
+            return nil
+        }
+        for window in NSApp.windows where window.className.contains("StatusBarWindow") {
+            if let button = find(window.contentView) { return button }
+        }
+        return nil
+    }
+
+    /// Close the popover the way a click on the icon does, so MenuBarExtra's own state (and
+    /// the icon highlight) stays in sync. Closing the window directly leaves it out of sync.
+    static func close(_ window: NSWindow?) {
+        if let button = statusItemButton() {
+            button.performClick(nil)
+        } else {
+            window?.close()
+        }
     }
 }

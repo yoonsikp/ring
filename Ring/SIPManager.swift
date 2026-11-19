@@ -511,7 +511,8 @@ final class SIPManager: ObservableObject {
             // whether the call is answered, declined or missed.
             if state == .IncomingReceived, let address = call.remoteAddress {
                 dialTarget = Self.callbackTarget(address)
-                notifier.showIncoming(from: remote)
+                // The popover already shows the call when it's open; only notify otherwise.
+                if !popoverOpen { notifier.showIncoming(from: remote) }
             }
             callPhase = .incoming(remote: remote)
         case .OutgoingInit, .OutgoingProgress, .OutgoingRinging, .OutgoingEarlyMedia:
