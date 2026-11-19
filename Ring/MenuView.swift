@@ -20,6 +20,12 @@ struct MenuView: View {
         }
         .padding(14)
         .frame(width: 280)
+        // When the popover closes (loses focus), go back to the home page next time it opens.
+        // While no account is configured the account form is shown regardless, so first-run
+        // setup isn't interrupted.
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in
+            page = .main
+        }
     }
 }
 
