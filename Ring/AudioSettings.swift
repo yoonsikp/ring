@@ -10,7 +10,7 @@ enum Codec: String, CaseIterable, Identifiable {
         switch self {
         case .g711: return "G.711 (PCMU / PCMA)"
         case .g722: return "G.722 (wideband)"
-        case .gsm: return "GSM"
+        case .gsm: return "GSM (low bandwidth)"
         }
     }
 
@@ -27,13 +27,13 @@ enum Codec: String, CaseIterable, Identifiable {
 /// App preferences that don't affect the SIP registration. Stored in UserDefaults.
 struct AudioSettings: Equatable {
     /// Software echo canceller. Needed on speakers; turn off with headphones (it can make audio choppy).
-    var echoCancellation = true
+    var echoCancellation = false
     var enabledCodecs: Set<Codec> = Set(Codec.allCases)
     /// Adaptive jitter buffer (liblinphone default). When off, a fixed buffer of `jitterBufferMs` is used.
     var adaptiveJitterBuffer = true
     var jitterBufferMs = 60
     /// Extra gain on incoming audio, in dB (plain amplification, not compression).
-    var speakerBoostDb = 0
+    var speakerBoostDb = 3
 
     static let jitterBufferRange = 20...500
     static let speakerBoostRange = 0...6
@@ -49,7 +49,7 @@ struct AudioSettings: Equatable {
     static func load() -> AudioSettings {
         let d = UserDefaults.standard
         var s = AudioSettings()
-        s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? true
+        s.echoCancellation = d.object(forKey: Key.echoCancellation) as? Bool ?? false
         s.adaptiveJitterBuffer = d.object(forKey: Key.adaptiveJitterBuffer) as? Bool ?? true
         if let ms = d.object(forKey: Key.jitterBufferMs) as? Int {
             s.jitterBufferMs = min(max(ms, jitterBufferRange.lowerBound), jitterBufferRange.upperBound)
