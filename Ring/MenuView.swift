@@ -157,7 +157,7 @@ private struct CallSection: View {
                             }
                             .buttonStyle(.plain)
                             .help("Clear")
-                            .padding(.trailing, 6)
+                            .padding(.trailing, Self.clearButtonTrailing)
                         }
                     }
                 // Regular-size button (same corner shape as Hang up), padded out to the field's height.
@@ -238,6 +238,13 @@ private struct CallSection: View {
             Spacer(minLength: 8)
             trailing()
         }
+    }
+
+    /// Gap between the clear (x) button and the field's right edge. macOS 15's field has a
+    /// thinner bezel, so the button needs a bit more room there to not look flush.
+    private static var clearButtonTrailing: CGFloat {
+        if #available(macOS 26.0, *) { return 6 }
+        return 8
     }
 
     private func call() {
@@ -582,7 +589,7 @@ private final class PaddedTextFieldCell: NSTextFieldCell {
     /// Extra room between the border and the text (macOS 26's field already has enough).
     private var leftInset: CGFloat {
         if #available(macOS 26.0, *) { return 0 }
-        return 2
+        return 1
     }
     /// Same on the right, plus room for the clear (x) button so text never runs under it.
     private var rightInset: CGFloat { leftInset + 10 }
