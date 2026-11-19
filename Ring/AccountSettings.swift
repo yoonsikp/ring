@@ -48,16 +48,18 @@ struct AccountSettings: Equatable {
 
 enum Keychain {
     private static let service = "com.yoonsikp.Ring"
-    private static let account = "sip-password"
+    /// Item names: the SIP password (the original, default item) and the TURN password.
+    static let sipPassword = "sip-password"
+    static let turnPassword = "turn-password"
 
-    private static var baseQuery: [String: Any] {
+    private static func query(_ account: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: service,
          kSecAttrAccount as String: account]
     }
 
-    static func read() -> String? {
-        var q = baseQuery
+    static func read(_ account: String = sipPassword) -> String? {
+        var q = query(account)
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
         var out: AnyObject?
@@ -66,18 +68,18 @@ enum Keychain {
         return String(data: data, encoding: .utf8)
     }
 
-    static func write(_ value: String) {
+    static func write(_ value: String, _ account: String = sipPassword) {
         let data = Data(value.utf8)
-        let status = SecItemUpdate(baseQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        let status = SecItemUpdate(query(account) as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         if status == errSecItemNotFound {
-            var q = baseQuery
+            var q = query(account)
             q[kSecValueData as String] = data
             q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
             SecItemAdd(q as CFDictionary, nil)
         }
     }
 
-    static func delete() {
-        SecItemDelete(baseQuery as CFDictionary)
+    static func delete(_ account: String = sipPassword) {
+        SecItemDelete(query(account) as CFDictionary)
     }
 }

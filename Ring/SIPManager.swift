@@ -23,6 +23,7 @@ final class SIPManager: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var settings = AccountSettings.load()
     @Published private(set) var audio = AudioSettings.load()
+    @Published private(set) var network = NetworkSettings.load()
     /// User intent: whether we *want* to be registered (the menu's Connect/Disconnect toggle).
     @Published private(set) var wantsConnection = true
     /// liblinphone's own network monitoring (it closes connections when the network goes and
@@ -123,6 +124,7 @@ final class SIPManager: ObservableObject {
 
         do { try core.start() } catch { lastError = "Core start failed: \(error)" }
         applyAudio()
+        applyNetwork()
         applyAccount()
         updatePowerMode()
     }
@@ -213,6 +215,41 @@ final class SIPManager: ObservableObject {
         core.playbackGainDb = Float(audio.speakerBoostDb)
     }
 
+    /// NAT traversal and IPv6 apply from the next call / connection.
+    func update(network new: NetworkSettings) {
+        new.save()
+        network = new
+        applyNetwork()
+    }
+
+    private func applyNetwork() {
+        core.ipv6Enabled = network.ipv6
+        guard let policy = try? core.createNatPolicy() else { return }
+        let server = network.stunServer.trimmingCharacters(in: .whitespaces)
+        if !server.isEmpty {
+            policy.stunServer = server
+            policy.stunEnabled = true
+        }
+        policy.iceEnabled = network.ice
+        policy.turnEnabled = network.turn && !server.isEmpty
+        if policy.turnEnabled {
+            policy.udpTurnTransportEnabled = true
+            policy.stunServerUsername = network.turnUsername
+        }
+        core.natPolicy = policy
+        addTurnAuth()
+    }
+
+    /// liblinphone finds TURN credentials as an AuthInfo matching `stunServerUsername`.
+    /// Re-added after applyAccount(), which clears all auth info.
+    private func addTurnAuth() {
+        guard network.turn, network.hasServer, !network.turnUsername.isEmpty,
+              let auth = try? Factory.Instance.createAuthInfo(
+                  username: network.turnUsername, userid: nil, passwd: network.turnPassword,
+                  ha1: nil, realm: nil, domain: nil) else { return }
+        core.addAuthInfo(info: auth)
+    }
+
     private func applyAudio() {
         core.echoCancellationEnabled = audio.echoCancellation
         core.playbackGainDb = Float(audio.speakerBoostDb)
@@ -301,6 +338,7 @@ final class SIPManager: ObservableObject {
             let auth = try factory.createAuthInfo(username: authUser, userid: nil, passwd: settings.password,
                                                   ha1: nil, realm: nil, domain: domain)
             core.addAuthInfo(info: auth)
+            addTurnAuth()
 
             let account = try core.createAccount(params: params)
             try core.addAccount(account: account)

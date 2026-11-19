@@ -11,7 +11,8 @@ which handles SIP, TLS, SRTP and audio.
 - SRTP is **mandatory**: calls that can't use SRTP fail
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Connect/disconnect switch in the popover
-- Settings: echo cancellation, adaptive or fixed-size jitter buffer, volume gain (0 to +6 dB, applied live), and codecs —
+- Network: Enable IPv6 (default on), STUN/TURN server, ICE, TURN with username + password (Keychain)
+- Audio: echo cancellation, adaptive or fixed-size jitter buffer, volume gain (0 to +6 dB, applied live), and codecs —
   only G.711 (PCMU/PCMA), G.722 and GSM can be enabled; every other codec is disabled (telephone-event stays on for DTMF)
 
 Requires macOS 13+.
@@ -49,7 +50,9 @@ time you place or answer a call.
 | `Ring/SIPManager.swift` | Wraps the liblinphone `Core`: account, registration, calls, mute, DTMF |
 | `Ring/MenuView.swift` | Popover UI: status, dialer, call controls, keypad, account and settings pages |
 | `Ring/AccountSettings.swift` | Account settings in UserDefaults, password in Keychain |
-| `Ring/AudioSettings.swift` | Echo cancellation, jitter buffer, codec selection |
+| `Ring/AudioSettings.swift` | Echo cancellation, jitter buffer, volume gain, codec selection |
+| `Ring/NetworkSettings.swift` | IPv6, STUN/TURN server, ICE, TURN credentials |
+| `Ring/Theme.swift` | Light/dark adaptive colours |
 | `project.yml` | XcodeGen spec (Info.plist and entitlements are generated from it) |
 
 ## Known gaps / to check on first run

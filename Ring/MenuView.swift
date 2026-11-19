@@ -3,7 +3,7 @@ import AppKit
 
 /// Contents of the menu bar popover: main, account and settings pages.
 struct MenuView: View {
-    enum Page { case main, account, settings }
+    enum Page { case main, account, settings, network }
 
     @EnvironmentObject private var sip: SIPManager
     @State private var page = Page.main
@@ -17,6 +17,8 @@ struct MenuView: View {
                 AccountView(onDone: { page = .main })
             } else if page == .settings {
                 SettingsView(onDone: { page = .main })
+            } else if page == .network {
+                NetworkView(onDone: { page = .main })
             } else {
                 MainPage(show: { page = $0 }, openCount: openCount)
             }
@@ -77,6 +79,7 @@ private struct MainPage: View {
             HStack {
                 Button("Account…") { show(.account) }
                 Button("Audio…") { show(.settings) }
+                Button("Network…") { show(.network) }
                 if SIPManager.loggingEnabled {
                     Button("Logs") { NSWorkspace.shared.open(SIPManager.logDirectory) }
                         .help("Open the liblinphone log folder")
@@ -393,5 +396,54 @@ private struct SettingsView: View {
             let r = AudioSettings.jitterBufferRange
             if !r.contains(ms) { draft.jitterBufferMs = min(max(ms, r.lowerBound), r.upperBound) }
         }
+    }
+}
+
+// MARK: - Network page
+
+private struct NetworkView: View {
+    @EnvironmentObject private var sip: SIPManager
+    @State private var draft = NetworkSettings()
+    let onDone: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Network Settings").font(.headline)
+
+            Toggle("Enable IPv6", isOn: $draft.ipv6)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("STUN/TURN server").font(.caption).foregroundStyle(.secondary)
+                TextField("host[:port], e.g. stun.example.com", text: $draft.stunServer)
+                    .textFieldStyle(.roundedBorder)
+            }
+            Toggle("Enable ICE", isOn: $draft.ice)
+            Toggle("Enable TURN", isOn: $draft.turn)
+                .disabled(!draft.hasServer)
+            if draft.turn && draft.hasServer {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("TURN username").font(.caption).foregroundStyle(.secondary)
+                    TextField("", text: $draft.turnUsername).textFieldStyle(.roundedBorder)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("TURN password").font(.caption).foregroundStyle(.secondary)
+                    SecureField("", text: $draft.turnPassword).textFieldStyle(.roundedBorder)
+                }
+            }
+
+            HStack {
+                Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("Save") {
+                    sip.update(network: draft)
+                    onDone()
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .onAppear { draft = sip.network }
     }
 }
