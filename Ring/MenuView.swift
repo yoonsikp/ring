@@ -148,11 +148,14 @@ private struct CallSection: View {
                     .focused($numberFocused)
                     .staticFocusRing(numberFocused)
                     .onSubmit(call)
-                Button(action: call) { Image(systemName: "phone.fill") }
-                    .buttonStyle(.borderedProminent).tint(.callGreen)
-                    .disabled(target.isEmpty || sip.registration != .connected)
+                    .controlSize(.large) // taller field
+                // Regular-size button (same corner shape as Hang up), padded out to the field's height.
+                Button(action: call) {
+                    Image(systemName: "phone.fill").frame(width: 24, height: 22)
+                }
+                .buttonStyle(.borderedProminent).tint(.callGreen)
+                .disabled(target.isEmpty || sip.registration != .connected)
             }
-            .controlSize(.large) // taller field, with the call button matching its height
             .onAppear {
                 showKeypad = false
                 focusNumber()
