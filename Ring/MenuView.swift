@@ -318,7 +318,7 @@ private struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
-                    Text("Speaker boost")
+                    Text("Volume gain")
                     Spacer()
                     Text(draft.speakerBoostDb == 0 ? "Off" : "+\(draft.speakerBoostDb) dB")
                         .monospacedDigit().foregroundStyle(.secondary)
@@ -330,8 +330,6 @@ private struct SettingsView: View {
                                       }),
                        in: Double(AudioSettings.speakerBoostRange.lowerBound)...Double(AudioSettings.speakerBoostRange.upperBound),
                        step: 1)
-                Text("Makes the caller louder. Too much can distort loud voices.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Toggle("Echo cancellation", isOn: $draft.echoCancellation)
