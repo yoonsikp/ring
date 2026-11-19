@@ -1,0 +1,34 @@
+name: Ring
+options:
+  bundleIdPrefix: com.yoonsikp
+  deploymentTarget:
+    macOS: "13.0"
+packages:
+  linphonesw:
+    url: https://gitlab.linphone.org/BC/public/linphone-sdk-swift-macos.git
+    exactVersion: 5.5.41
+targets:
+  Ring:
+    type: application
+    platform: macOS
+    sources: [Ring]
+    dependencies:
+      - package: linphonesw
+    info:
+      path: Ring/Info.plist
+      properties:
+        CFBundleDisplayName: Ring
+        LSUIElement: true
+        NSMicrophoneUsageDescription: Ring needs the microphone for voice calls.
+    entitlements:
+      path: Ring/Ring.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yoonsikp.Ring
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: "-"
+        SWIFT_VERSION: "5.9"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"

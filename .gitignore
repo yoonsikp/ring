@@ -1,0 +1,6 @@
+build/
+Ring.xcodeproj/
+Ring/Info.plist
+Ring/Ring.entitlements
+.DS_Store
+xcuserdata/
