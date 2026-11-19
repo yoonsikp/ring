@@ -39,10 +39,7 @@ final class SIPManager: ObservableObject {
         .appendingPathComponent("Logs/Ring", isDirectory: true)
 
     init() {
-        try? FileManager.default.createDirectory(at: Self.logDirectory, withIntermediateDirectories: true)
-        Core.setLogCollectionPath(path: Self.logDirectory.path)
-        Core.enableLogCollection(state: .Enabled)
-        LoggingService.Instance.logLevel = .Message
+        Self.applyLogging(audio.logging) // before the core exists, so startup is logged too
 
         activity = ProcessInfo.processInfo.beginActivity(
             options: [.userInitiatedAllowingIdleSystemSleep, .latencyCritical],
@@ -128,7 +125,20 @@ final class SIPManager: ObservableObject {
         applyAudio()
     }
 
+    private static func applyLogging(_ on: Bool) {
+        if on {
+            try? FileManager.default.createDirectory(at: logDirectory, withIntermediateDirectories: true)
+            Core.setLogCollectionPath(path: logDirectory.path)
+            Core.enableLogCollection(state: .Enabled)
+            LoggingService.Instance.logLevel = .Message
+        } else {
+            Core.enableLogCollection(state: .Disabled)
+            LoggingService.Instance.logLevel = .Error
+        }
+    }
+
     private func applyAudio() {
+        Self.applyLogging(audio.logging)
         core.echoCancellationEnabled = audio.echoCancellation
         core.audioAdaptiveJittcompEnabled = audio.adaptiveJitterBuffer
         core.audioJittcomp = audio.jitterBufferMs // fixed size, or the starting size when adaptive

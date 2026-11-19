@@ -11,7 +11,7 @@ which handles SIP, TLS, SRTP and audio.
 - SRTP is **mandatory**: calls that can't use SRTP fail
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Connect/disconnect switch in the popover
-- Settings: echo cancellation, adaptive or fixed-size jitter buffer, and codecs —
+- Settings: echo cancellation, adaptive or fixed-size jitter buffer, logging (off by default), and codecs —
   only G.711 (PCMU/PCMA), G.722 and GSM can be enabled; every other codec is disabled (telephone-event stays on for DTMF)
 
 Requires macOS 13+.
