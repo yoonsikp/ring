@@ -89,6 +89,11 @@ final class SIPManager: ObservableObject {
             try? core.setTransports(newValue: transports)
         }
 
+        // Custom ring tone (Ring/Sounds/ringtone.wav: mono 48 kHz WAV, already at half volume).
+        if let ringtone = Bundle.main.path(forResource: "ringtone", ofType: "wav") {
+            core.ring = ringtone
+        }
+
         core.maxCalls = 1                      // one call at a time; extra INVITEs get 486 Busy
         core.videoCaptureEnabled = false       // audio only
         core.videoDisplayEnabled = false

@@ -74,6 +74,7 @@ time you place or answer a call.
 | `Ring/AudioSettings.swift` | Echo cancellation, jitter buffer, volume gain, codec selection |
 | `Ring/NetworkSettings.swift` | IPv6, STUN/TURN server, ICE, TURN credentials |
 | `Ring/Theme.swift` | Light/dark adaptive colours |
+| `Ring/Sounds/ringtone.wav` | Ring tone (mono 48 kHz 16-bit WAV, at half volume) |
 | `Ring/PhoneFormat.swift` | Country-aware phone number formatting (PhoneNumberKit) |
 | `project.yml` | XcodeGen spec (Info.plist and entitlements are generated from it) |
 

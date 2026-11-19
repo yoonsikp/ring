@@ -45,15 +45,15 @@ targets:
       - name: Remove unused liblinphone media
         basedOnDependencyAnalysis: false
         script: |
-          # The SDK ships ~9 MB of sounds. Keep only what Ring uses: the ring tone
-          # (notes_of_the_optimistic.mkv, oldphone-mono.wav fallback), the ringback tone
-          # (ringback.wav) and silence.mkv. Hold music, alternative ring tones, test
-          # recordings and the chat sound go.
+          # The SDK ships ~9 MB of sounds. Ring has its own ring tone (Ring/Sounds/ringtone.wav),
+          # so keep only the ringback tone (ringback.wav) and silence.mkv. The SDK ring tones,
+          # hold music, test recordings and the chat sound go.
           set -e
           FW="$TARGET_BUILD_DIR/$WRAPPER_NAME/Contents/Frameworks/linphone.framework"
           RES="$FW/Versions/A/Resources"
           [ -d "$RES" ] || { echo "warning: $RES not found, skipping"; exit 0; }
-          for f in dont_wait_too_long.mkv its_a_game.mkv soft_as_snow.mkv house_keeping.mkv \
+          for f in notes_of_the_optimistic.mkv oldphone-mono.wav \
+                   dont_wait_too_long.mkv its_a_game.mkv soft_as_snow.mkv house_keeping.mkv \
                    four_hands_together.mkv leaving_dreams.mkv toy-mono.wav hello16000.wav \
                    hello8000.wav incoming_chat.wav; do
             rm -f "$RES/$f"
