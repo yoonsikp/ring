@@ -89,7 +89,6 @@ private struct MainPage: View {
                 }
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
-                    .foregroundStyle(.primary) // normal text colour instead of the lighter accent
                     .fontWeight(.semibold)
             }
             .buttonStyle(.borderless)
