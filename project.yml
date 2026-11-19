@@ -55,6 +55,19 @@ targets:
                    hello8000.wav incoming_chat.wav; do
             rm -f "$RES/$f"
           done
-          # The framework's signature covers its resources, so sign it again.
-          codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" \
-            --preserve-metadata=identifier,entitlements,flags "$FW"
+
+      - name: Re-sign embedded frameworks with Ring's identity
+        basedOnDependencyAnalysis: false
+        script: |
+          # The linphone SDK frameworks come signed with Belledonne's Team ID. With the hardened
+          # runtime, macOS only loads libraries from the same Team ID as the app ("mapping process
+          # and mapped file have different Team IDs"), so sign them all with Ring's own identity
+          # (ad-hoc "-" by default). This also re-seals linphone.framework after the media cleanup.
+          set -e
+          FRAMEWORKS="$TARGET_BUILD_DIR/$WRAPPER_NAME/Contents/Frameworks"
+          [ -d "$FRAMEWORKS" ] || exit 0
+          for fw in "$FRAMEWORKS"/*.framework "$FRAMEWORKS"/*.dylib; do
+            [ -e "$fw" ] || continue
+            codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" \
+              --preserve-metadata=identifier,flags --timestamp=none "$fw"
+          done
