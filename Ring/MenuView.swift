@@ -146,9 +146,10 @@ private struct CallSection: View {
                           focusRequest: focusRequest, onSubmit: call)
                 // Regular-size button (same corner shape as Hang up), padded out to the field's height.
                 Button(action: call) {
-                    Image(systemName: "phone.fill").frame(width: 22, height: 18)
+                    Image(systemName: "phone.fill").frame(width: 22, height: 19)
                 }
                 .buttonStyle(.borderedProminent).tint(.callGreen)
+                .offset(y: -0.5) // the extra 1 pt of height goes on top only; bottom edge stays put
                 .disabled(target.isEmpty || sip.registration != .connected)
             }
             .onAppear {
