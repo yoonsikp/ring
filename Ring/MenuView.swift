@@ -659,7 +659,7 @@ private struct CountryPicker: View, Equatable {
 
 // MARK: - Closing the popover
 
-@MainActor
+/// Not @MainActor: also called from the NSTextField delegate (always on the main thread).
 enum MenuBarPopover {
     /// Ring's menu bar icon (the app has a single status item).
     static func statusItemButton() -> NSStatusBarButton? {
