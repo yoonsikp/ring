@@ -140,6 +140,12 @@ final class SIPManager: ObservableObject {
         do { try core.start() } catch { lastError = "Core start failed: \(error)" }
         PhoneFormat.regionSetting = settings.phoneRegion
 
+        // Ask for the microphone up front (notifications are requested by CallNotifier at
+        // launch too), so neither prompt interrupts the first call.
+        if AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined {
+            AVCaptureDevice.requestAccess(for: .audio) { _ in }
+        }
+
         notifier.onAnswer = { [weak self] in
             guard let self, case .incoming = self.callPhase else { return }
             self.answer()

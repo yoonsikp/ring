@@ -93,7 +93,7 @@ ad-hoc builds created that Keychain item); choose **Always Allow**, and it won't
 
 ## First-run setup
 
-1. **Allow notifications** when Ring asks on first launch.
+1. **Allow the microphone and notifications** when Ring asks on first launch.
 2. **Set Ring to Alerts:** open *System Settings › Notifications › Ring* and change the alert
    style from **Banners** to **Alerts**. Banners disappear after a few seconds and hide the
    Answer / Decline buttons behind *Options*; Alerts stay on screen until you act.
