@@ -332,15 +332,13 @@ private struct SettingsView: View {
                        step: 1)
             }
 
-            Toggle("Echo cancellation", isOn: $draft.echoCancellation)
-            Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
-                .font(.caption).foregroundStyle(.secondary)
+            Toggle("Echo cancellation (experimental)", isOn: $draft.echoCancellation)
 
-            Toggle("Adaptive buffer", isOn: $draft.adaptiveJitterBuffer)
+            Toggle("Adaptive network buffer (experimental)", isOn: $draft.adaptiveJitterBuffer)
             if !draft.adaptiveJitterBuffer {
                 Stepper(value: $draft.jitterBufferMs, in: AudioSettings.jitterBufferRange, step: 10) {
                     HStack(spacing: 4) {
-                        Text("Fixed size")
+                        Text("Fixed buffer size")
                         Spacer()
                         TextField("", value: $draft.jitterBufferMs, format: .number)
                             .textFieldStyle(.roundedBorder).frame(width: 52).multilineTextAlignment(.trailing)
