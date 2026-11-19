@@ -31,7 +31,7 @@ struct AudioSettings: Equatable {
     var enabledCodecs: Set<Codec> = Set(Codec.allCases)
     /// Adaptive jitter buffer (liblinphone default). When off, a fixed buffer of `jitterBufferMs` is used.
     var adaptiveJitterBuffer = true
-    var jitterBufferMs = 60
+    var jitterBufferMs = 90
     /// Extra gain on incoming audio, in dB (plain amplification, not compression).
     var speakerBoostDb = 3
 

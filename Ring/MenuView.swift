@@ -334,7 +334,7 @@ private struct SettingsView: View {
 
             Toggle("Echo cancellation (experimental)", isOn: $draft.echoCancellation)
 
-            Toggle("Adaptive network buffer (experimental)", isOn: $draft.adaptiveJitterBuffer)
+            Toggle("Adaptive buffer (experimental)", isOn: $draft.adaptiveJitterBuffer)
             if !draft.adaptiveJitterBuffer {
                 Stepper(value: $draft.jitterBufferMs, in: AudioSettings.jitterBufferRange, step: 10) {
                     HStack(spacing: 4) {
@@ -349,7 +349,7 @@ private struct SettingsView: View {
 
             Divider()
 
-            Text("Codecs").font(.subheadline.weight(.semibold))
+            Text("Codec Support").font(.subheadline.weight(.semibold))
             ForEach(Codec.allCases) { codec in
                 Toggle(codec.label, isOn: Binding(
                     get: { draft.enabledCodecs.contains(codec) },
