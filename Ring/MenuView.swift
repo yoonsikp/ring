@@ -137,7 +137,7 @@ private struct CallSection: View {
                     .focused($numberFocused)
                     .onSubmit(call)
                 Button(action: call) { Image(systemName: "phone.fill") }
-                    .buttonStyle(.borderedProminent).tint(.green)
+                    .buttonStyle(.borderedProminent).tint(.callGreen)
                     .disabled(target.isEmpty || sip.registration != .connected)
             }
             .onAppear {
@@ -155,7 +155,7 @@ private struct CallSection: View {
                         .buttonStyle(.bordered)
                     Spacer()
                     Button("Answer") { sip.answer() }
-                        .buttonStyle(.borderedProminent).tint(.green)
+                        .buttonStyle(.borderedProminent).tint(.callGreen)
                         .keyboardShortcut(.defaultAction)
                 }
             }
@@ -184,8 +184,9 @@ private struct CallSection: View {
                         Label(sip.isMuted ? "Unmute" : "Mute",
                               systemImage: sip.isMuted ? "mic.slash.fill" : "mic.fill")
                             .frame(maxWidth: .infinity)
+                            // Only the text/icon changes colour when muted; the background stays.
+                            .foregroundStyle(sip.isMuted ? Color.mutedText : Color.primary)
                     }
-                    .tint(sip.isMuted ? .orange : nil)
                     Button { showKeypad.toggle() } label: {
                         Label("Keypad", systemImage: "circle.grid.3x3.fill")
                             .frame(maxWidth: .infinity)
@@ -220,7 +221,7 @@ private struct HangUpButton: View {
         Button(role: .destructive) { sip.hangUp() } label: {
             Label("Hang up", systemImage: "phone.down.fill").frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent).tint(.red)
+        .buttonStyle(.borderedProminent).tint(.callRed)
     }
 }
 
