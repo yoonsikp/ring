@@ -77,14 +77,13 @@ targets:
           set -e
           FRAMEWORKS="$TARGET_BUILD_DIR/$WRAPPER_NAME/Contents/Frameworks"
           [ -d "$FRAMEWORKS" ] || exit 0
-          for fw in "$FRAMEWORKS"/*.framework; do
-            name=$(basename "$fw" .framework)
-            bin="$fw/Versions/Current/$name"
-            [ -f "$bin" ] || bin="$fw/$name"
-            [ -f "$bin" ] || continue
+          # Every Mach-O file in the frameworks: the main binaries and nested plugins such as
+          # mediastreamer2.framework/Versions/A/Libraries/libmswebrtc.so.
+          find "$FRAMEWORKS" -type f ! -path '*/_CodeSignature/*' | while read -r bin; do
+            file -b "$bin" | grep -q 'Mach-O' || continue
             have=$(lipo -archs "$bin")
             set -- $ARCHS
-            if [ $# -eq 1 ] && [ "$have" != "$1" ]; then
+            if [ $# -eq 1 ] && [ "$have" != "$1" ] && echo " $have " | grep -q " $1 "; then
               lipo -thin "$1" "$bin" -output "$bin.thin" && mv "$bin.thin" "$bin"
             fi
             strip -x "$bin" 2>/dev/null || true
@@ -104,8 +103,17 @@ targets:
           # runtime, which notarization requires; ad-hoc ("-") builds can't be timestamped.
           ID="${EXPANDED_CODE_SIGN_IDENTITY:--}"
           if [ "$ID" = "-" ]; then TS="--timestamp=none"; else TS="--timestamp"; fi
+          sign() { codesign --force --sign "$ID" --options runtime $TS --preserve-metadata=identifier "$1"; }
           for fw in "$FRAMEWORKS"/*.framework "$FRAMEWORKS"/*.dylib; do
             [ -e "$fw" ] || continue
-            codesign --force --sign "$ID" --options runtime $TS \
-              --preserve-metadata=identifier "$fw"
+            if [ -d "$fw" ]; then
+              # Inside-out: nested Mach-O files (plugins like Libraries/libmswebrtc.so) first,
+              # then the framework itself. Notarization rejects any unsigned nested binary.
+              name=$(basename "$fw" .framework)
+              find "$fw" -type f ! -path '*/_CodeSignature/*' | while read -r f; do
+                [ "$(basename "$f")" = "$name" ] && continue
+                file -b "$f" | grep -q 'Mach-O' && sign "$f"
+              done
+            fi
+            sign "$fw"
           done
