@@ -10,7 +10,7 @@ struct RingApp: App {
             MenuView()
                 .environmentObject(appDelegate.sip)
         } label: {
-            StatusIcon(sip: appDelegate.sip)
+            StatusIcon(sip: appDelegate.sip, clock: appDelegate.sip.clock)
         }
         .menuBarExtraStyle(.window)
     }
@@ -19,11 +19,18 @@ struct RingApp: App {
 /// The menu bar icon. Its own view so it re-renders when the SIP state changes.
 private struct StatusIcon: View {
     @ObservedObject var sip: SIPManager
+    @ObservedObject var clock: CallClock
 
     var body: some View {
-        Image(nsImage: Self.image(for: sip.statusSymbol))
-            .accessibilityLabel(sip.statusText)
-            .transaction { $0.animation = nil } // never animate the status item
+        HStack(spacing: 4) {
+            Image(nsImage: Self.image(for: sip.statusSymbol))
+            // Call duration while in a call: m:ss, or h:mm:ss after an hour.
+            if let elapsed = clock.elapsed {
+                Text(formatCallDuration(elapsed)).monospacedDigit()
+            }
+        }
+        .accessibilityLabel(sip.statusText)
+        .transaction { $0.animation = nil } // never animate the status item
     }
 
     /// Every state's symbol drawn centred on the same fixed canvas, so the status item

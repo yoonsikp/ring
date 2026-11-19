@@ -179,7 +179,7 @@ private struct CallSection: View {
                     Text(remote).font(.title3).lineLimit(1).truncationMode(.middle)
                     Spacer()
                     TimelineView(.periodic(from: since, by: 1)) { ctx in
-                        Text(Self.format(ctx.date.timeIntervalSince(since)))
+                        Text(formatCallDuration(Int(ctx.date.timeIntervalSince(since))))
                             .monospacedDigit().foregroundStyle(.secondary)
                     }
                 }
@@ -217,11 +217,6 @@ private struct CallSection: View {
         DispatchQueue.main.async { numberFocused = true }
     }
 
-    private static func format(_ t: TimeInterval) -> String {
-        let s = max(0, Int(t))
-        return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
-                         : String(format: "%d:%02d", s / 60, s % 60)
-    }
 }
 
 private struct HangUpButton: View {

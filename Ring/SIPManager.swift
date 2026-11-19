@@ -24,6 +24,8 @@ final class SIPManager: ObservableObject {
     @Published private(set) var settings = AccountSettings.load()
     @Published private(set) var audio = AudioSettings.load()
     @Published private(set) var network = NetworkSettings.load()
+    /// Call duration for the menu bar (ticks separately from the rest of the UI).
+    let clock = CallClock()
     /// User intent: whether we *want* to be registered (the menu's Connect/Disconnect toggle).
     @Published private(set) var wantsConnection = true
     /// liblinphone's own network monitoring (it closes connections when the network goes and
@@ -467,7 +469,9 @@ final class SIPManager: ObservableObject {
         case .Connected, .StreamsRunning:
             lastError = nil
             if case .active = callPhase { break }
-            callPhase = .active(remote: remote, since: Date())
+            let start = Date()
+            callPhase = .active(remote: remote, since: start)
+            clock.start(since: start)
         case .Error where Self.isNetworkFailure(call):
             lastError = "Call dropped: network problem"
             endCall()
@@ -497,6 +501,7 @@ final class SIPManager: ObservableObject {
 
     private func endCall() {
         trackedCall = nil // its later Released (or anything else) is ignored
+        clock.stop()
         if accountApplyPending {
             // Let the BYE / its 200 OK go out before tearing down the account.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
