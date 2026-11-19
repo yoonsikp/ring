@@ -131,6 +131,8 @@ final class SIPManager: ObservableObject {
         core.autoIterateEnabled = false
 
         do { try core.start() } catch { lastError = "Core start failed: \(error)" }
+        PhoneFormat.regionSetting = settings.phoneRegion
+
         notifier.onAnswer = { [weak self] in
             guard let self, case .incoming = self.callPhase else { return }
             self.answer()
@@ -193,7 +195,11 @@ final class SIPManager: ObservableObject {
 
     func update(settings new: AccountSettings) {
         new.save()
-        let changed = new != settings
+        PhoneFormat.regionSetting = new.phoneRegion
+        // The phone-number country is display-only; it doesn't need a re-registration.
+        var old = settings, cmp = new
+        old.phoneRegion = ""; cmp.phoneRegion = ""
+        let changed = cmp != old
         settings = new
         guard changed else { return } // only re-register if the account actually changed
         if trackedCall != nil {
@@ -405,7 +411,8 @@ final class SIPManager: ObservableObject {
     private var currentCall: Call? { trackedCall }
 
     func dial(_ input: String) {
-        let target = input.trimmingCharacters(in: .whitespaces)
+        // Strip display formatting: "(431) 334-7050" → "4313347050"; SIP addresses unchanged.
+        let target = PhoneFormat.dialString(input)
         guard !target.isEmpty, callPhase == .idle else { return }
         lastError = nil // a new attempt clears the previous call's error
         guard registration == .connected else { lastError = "Not connected"; return }
@@ -566,14 +573,21 @@ final class SIPManager: ObservableObject {
     /// numbers (voip.ms sends e.g. sip:4313347050@…), otherwise user@domain.
     private static func callbackTarget(_ a: Address) -> String {
         guard let user = a.username, !user.isEmpty else { return a.asStringUriOnly() }
-        let isNumber = user.allSatisfy { $0.isNumber || "+*#".contains($0) }
-        if isNumber { return user }
+        if PhoneFormat.looksLikeNumber(user) {
+            // Prefer the display name when it's the full number (voip.ms: "+14313347050"
+            // <sip:4313347050@…>), so the country is known; format it for the field.
+            if let name = a.displayName, name.hasPrefix("+"), let formatted = PhoneFormat.display(name) {
+                return formatted
+            }
+            return PhoneFormat.display(user) ?? user
+        }
         if let domain = a.domain, !domain.isEmpty { return "\(user)@\(domain)" }
         return user
     }
 
     private static func displayName(_ a: Address) -> String {
-        if let n = a.displayName, !n.isEmpty { return n }
+        if let n = a.displayName, !n.isEmpty { return PhoneFormat.display(n) ?? n }
+        if let u = a.username, let formatted = PhoneFormat.display(u) { return formatted }
         if let u = a.username, let d = a.domain { return "\(u)@\(d)" }
         return a.asStringUriOnly()
     }

@@ -7,6 +7,9 @@ packages:
   linphonesw:
     url: https://gitlab.linphone.org/BC/public/linphone-sdk-swift-macos.git
     exactVersion: 5.5.41
+  PhoneNumberKit:
+    url: https://github.com/marmelroy/PhoneNumberKit.git
+    exactVersion: 4.3.0
 targets:
   Ring:
     type: application
@@ -14,6 +17,8 @@ targets:
     sources: [Ring]
     dependencies:
       - package: linphonesw
+      - package: PhoneNumberKit
+        product: PhoneNumberKit
     info:
       path: Ring/Info.plist
       properties:

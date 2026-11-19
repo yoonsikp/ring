@@ -8,6 +8,9 @@ which handles SIP, TLS, SRTP and audio.
   · arrows for incoming/outgoing calls · waveform during a call
 - One account, one call at a time (`maxCalls = 1`; a second incoming call gets *486 Busy*)
 - Settings: SIP address, username, password (stored in the Keychain), optional server, TLS on/off
+- Phone numbers are formatted for your country (brackets, spaces, hyphens) as you type and for
+  callers, using [PhoneNumberKit](https://github.com/marmelroy/PhoneNumberKit). The country is
+  automatic (your Mac's region) or chosen under Account; formatting is stripped before dialling.
 - SRTP is **mandatory**: calls that can't use SRTP fail
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Connect/disconnect switch in the popover
@@ -26,7 +29,7 @@ make run        # generates Ring.xcodeproj, builds Release, launches the app
 ```
 
 Or run `make project` and open `Ring.xcodeproj` in Xcode. Swift Package Manager downloads the
-linphone SDK (`linphonesw`, pinned to 5.5.41) on the first build.
+linphone SDK (`linphonesw`, pinned to 5.5.41) and PhoneNumberKit (4.3.0) on the first build.
 
 ### Logging
 
@@ -71,6 +74,7 @@ time you place or answer a call.
 | `Ring/AudioSettings.swift` | Echo cancellation, jitter buffer, volume gain, codec selection |
 | `Ring/NetworkSettings.swift` | IPv6, STUN/TURN server, ICE, TURN credentials |
 | `Ring/Theme.swift` | Light/dark adaptive colours |
+| `Ring/PhoneFormat.swift` | Country-aware phone number formatting (PhoneNumberKit) |
 | `project.yml` | XcodeGen spec (Info.plist and entitlements are generated from it) |
 
 ## Known gaps / to check on first run

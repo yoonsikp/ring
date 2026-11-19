@@ -11,6 +11,9 @@ struct AccountSettings: Equatable {
     /// Optional registrar/proxy host[:port]; if empty, the SIP address's domain is used.
     var server: String = ""
     var useTLS: Bool = true
+    /// Country for formatting phone numbers (two-letter code), "" = automatic from the Mac's region.
+    /// Display only: changing it doesn't affect the SIP registration.
+    var phoneRegion: String = ""
 
     var isComplete: Bool { !sipAddress.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
 
@@ -23,6 +26,7 @@ struct AccountSettings: Equatable {
 
     private enum Key {
         static let sipAddress = "sipAddress", username = "username", server = "server", useTLS = "useTLS"
+        static let phoneRegion = "phoneRegion"
     }
 
     static func load() -> AccountSettings {
@@ -32,6 +36,7 @@ struct AccountSettings: Equatable {
         s.username = d.string(forKey: Key.username) ?? ""
         s.server = d.string(forKey: Key.server) ?? ""
         s.useTLS = d.object(forKey: Key.useTLS) as? Bool ?? true
+        s.phoneRegion = d.string(forKey: Key.phoneRegion) ?? ""
         s.password = Keychain.read() ?? ""
         return s
     }
@@ -42,6 +47,7 @@ struct AccountSettings: Equatable {
         d.set(username, forKey: Key.username)
         d.set(server, forKey: Key.server)
         d.set(useTLS, forKey: Key.useTLS)
+        d.set(phoneRegion, forKey: Key.phoneRegion)
         if password.isEmpty { Keychain.delete() } else { Keychain.write(password) }
     }
 }

@@ -71,12 +71,12 @@ private struct MainPage: View {
         VStack(alignment: .leading, spacing: 12) {
             StatusHeader()
 
+            Divider()
+            CallSection(openCount: openCount, target: $target)
+            // Errors go under the number field, so the field doesn't jump down when one appears.
             if let err = sip.lastError {
                 Text(err).font(.caption).foregroundStyle(.red).lineLimit(3)
             }
-
-            Divider()
-            CallSection(openCount: openCount, target: $target)
             Divider()
 
             HStack {
@@ -143,7 +143,8 @@ private struct CallSection: View {
         case .idle:
             HStack {
                 DialField(text: $target, placeholder: "Number or SIP address",
-                          focusRequest: focusRequest, onSubmit: call)
+                          focusRequest: focusRequest, onSubmit: call,
+                          format: { PhoneFormat.partial($0) })
                 // Regular-size button (same corner shape as Hang up), padded out to the field's height.
                 Button(action: call) {
                     Image(systemName: "phone.fill").frame(width: 22, height: 19)
@@ -270,6 +271,18 @@ private struct AccountView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Password").font(.caption).foregroundStyle(.secondary)
                 SecureField("", text: $draft.password).textFieldStyle(.roundedBorder)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Country").font(.caption).foregroundStyle(.secondary)
+                Picker("Country", selection: $draft.phoneRegion) {
+                    Text("Automatic (\(PhoneFormat.countryName(PhoneFormat.automaticRegion)))").tag("")
+                    Divider()
+                    ForEach(PhoneFormat.countries, id: \.code) { country in
+                        Text(country.name).tag(country.code)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
             }
 
             DisclosureGroup(isExpanded: $showAdvanced) {
@@ -460,6 +473,8 @@ private struct DialField: NSViewRepresentable {
     /// Changing this value focuses the field.
     let focusRequest: Int
     let onSubmit: () -> Void
+    /// As-you-type formatting (brackets, spaces, hyphens for phone numbers).
+    let format: (String) -> String
 
     func makeNSView(context: Context) -> NSTextField {
         let field = NSTextField()
@@ -478,7 +493,10 @@ private struct DialField: NSViewRepresentable {
 
     func updateNSView(_ field: NSTextField, context: Context) {
         context.coordinator.parent = self
-        if field.stringValue != text { field.stringValue = text }
+        if field.stringValue != text {
+            field.stringValue = text
+            context.coordinator.syncPrevious(text)
+        }
         if context.coordinator.handledFocusRequest != focusRequest {
             context.coordinator.handledFocusRequest = focusRequest
             // Next tick, once the popover window is key.
@@ -496,10 +514,23 @@ private struct DialField: NSViewRepresentable {
         var parent: DialField
         var handledFocusRequest = -1
         init(_ parent: DialField) { self.parent = parent }
+        func syncPrevious(_ text: String) { previous = text }
+
+        private var previous = ""
 
         func controlTextDidChange(_ note: Notification) {
             guard let field = note.object as? NSTextField else { return }
-            parent.text = field.stringValue
+            var raw = field.stringValue
+            // Backspacing over a ")" or "-" only removes formatting that would be re-added
+            // straight away; remove the digit before it instead so deleting still works.
+            let digits = { (s: String) in s.filter(\.isNumber) }
+            if raw.count < previous.count, digits(raw) == digits(previous), let i = raw.lastIndex(where: \.isNumber) {
+                raw.remove(at: i)
+            }
+            let formatted = parent.format(raw)
+            if formatted != field.stringValue { field.stringValue = formatted }
+            previous = formatted
+            parent.text = formatted
         }
 
         func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
