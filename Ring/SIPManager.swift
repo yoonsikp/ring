@@ -26,6 +26,8 @@ final class SIPManager: ObservableObject {
     @Published private(set) var network = NetworkSettings.load()
     /// The number field's contents. Lives here so incoming calls can fill in the caller.
     @Published var dialTarget = ""
+    /// System notification with Answer / Decline for incoming calls.
+    private let notifier = CallNotifier()
     /// Whether the menu bar popover is on screen (reported by MenuView).
     @Published private(set) var popoverOpen = false
     /// Call duration for the menu bar (ticks separately from the rest of the UI).
@@ -129,6 +131,15 @@ final class SIPManager: ObservableObject {
         core.autoIterateEnabled = false
 
         do { try core.start() } catch { lastError = "Core start failed: \(error)" }
+        notifier.onAnswer = { [weak self] in
+            guard let self, case .incoming = self.callPhase else { return }
+            self.answer()
+        }
+        notifier.onDecline = { [weak self] in
+            guard let self, case .incoming = self.callPhase else { return }
+            self.hangUp()
+        }
+
         applyAudio()
         applyNetwork()
         applyAccount()
@@ -487,11 +498,13 @@ final class SIPManager: ObservableObject {
             // whether the call is answered, declined or missed.
             if state == .IncomingReceived, let address = call.remoteAddress {
                 dialTarget = Self.callbackTarget(address)
+                notifier.showIncoming(from: remote)
             }
             callPhase = .incoming(remote: remote)
         case .OutgoingInit, .OutgoingProgress, .OutgoingRinging, .OutgoingEarlyMedia:
             callPhase = .outgoing(remote: remote)
         case .Connected, .StreamsRunning:
+            notifier.clear()
             lastError = nil
             if case .active = callPhase { break }
             let start = Date()
@@ -527,6 +540,7 @@ final class SIPManager: ObservableObject {
     private func endCall() {
         trackedCall = nil // its later Released (or anything else) is ignored
         clock.stop()
+        notifier.clear()
         if accountApplyPending {
             // Let the BYE / its 200 OK go out before tearing down the account.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
