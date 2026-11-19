@@ -1,15 +1,19 @@
 #!/bin/bash
-# Build a minimal liblinphone SDK for Ring from source: audio only, one architecture, size-optimised.
+# Build a minimal liblinphone SDK for Ring from source: audio only, size-optimised.
 # Produces a local Swift package at build/linphone-sdk-min/linphone-sdk-swift-macos, which
 # `make small` uses instead of the prebuilt SDK.
 #
-# Usage: scripts/build-sdk.sh [arm64|x86_64]   (default: this Mac's architecture)
+# Usage: scripts/build-sdk.sh [universal|native|arm64|x86_64]   (default: universal)
 #
 # Needs: Xcode 15+, Homebrew packages `cmake ninja doxygen yasm nasm`, and the Python modules
 # `pystache six` for /usr/bin/python3 (see README). The first build takes a while.
 set -euo pipefail
 
-ARCH="${1:-$(uname -m)}"
+case "${1:-universal}" in
+  universal) ARCHS="arm64, x86_64" ;;
+  native)    ARCHS="$(uname -m)" ;;
+  *)         ARCHS="$1" ;;
+esac
 VERSION="5.5.41"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/build/linphone-sdk-src"
@@ -26,7 +30,7 @@ fi
 cmake --preset=mac-sdk -G Ninja -S "$SRC" -B "$OUT" \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
   -DENABLE_FAT_BINARY=OFF \
-  -DLINPHONESDK_MACOS_ARCHS="$ARCH" \
+  -DLINPHONESDK_MACOS_ARCHS="$ARCHS" \
   -DPython3_EXECUTABLE=/usr/bin/python3 \
   -DENABLE_SWIFT_WRAPPER=ON \
   -DENABLE_SWIFT_WRAPPER_COMPILATION=OFF \

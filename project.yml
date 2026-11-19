@@ -41,9 +41,9 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         ENABLE_USER_SCRIPT_SANDBOXING: NO # the post-build step edits the built app
-        # Size: build only for this Mac's processor (`make universal` builds both), optimise for size.
-        ARCHS: $(NATIVE_ARCH_ACTUAL)
-        ONLY_ACTIVE_ARCH: YES
+        # Universal (Intel + Apple Silicon) by default; `make native` builds this Mac's only.
+        ARCHS: $(ARCHS_STANDARD)
+        ONLY_ACTIVE_ARCH: NO
         SWIFT_OPTIMIZATION_LEVEL: -Osize
         GCC_OPTIMIZATION_LEVEL: s
         DEAD_CODE_STRIPPING: YES

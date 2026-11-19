@@ -1,11 +1,12 @@
-.PHONY: project build run run-logging universal size sdk small clean
+.PHONY: project build run run-logging native size sdk sdk-native small clean
 
 project:
 	xcodegen generate
 
+# Universal app: runs on Intel and Apple Silicon Macs.
 build: project
 	xcodebuild -project Ring.xcodeproj -scheme Ring -configuration Release \
-		-derivedDataPath build -destination 'platform=macOS' build
+		-derivedDataPath build -destination 'generic/platform=macOS' build
 
 run: build
 	open build/Build/Products/Release/Ring.app
@@ -14,15 +15,19 @@ run: build
 run-logging: build
 	open build/Build/Products/Release/Ring.app --args --logging
 
-# Both Intel and Apple Silicon (about twice the size).
-universal: project
+# This Mac's processor only (about half the size; won't run on the other kind of Mac).
+native: project
 	xcodebuild -project Ring.xcodeproj -scheme Ring -configuration Release \
-		-derivedDataPath build -destination 'generic/platform=macOS' \
-		ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build
+		-derivedDataPath build -destination 'platform=macOS' \
+		ARCHS='$$(NATIVE_ARCH_ACTUAL)' ONLY_ACTIVE_ARCH=YES build
 
-# Minimal SDK built from source (audio only, this Mac's architecture). Slow the first time.
+# Minimal SDK built from source (audio only, universal). Slow the first time.
 sdk:
-	scripts/build-sdk.sh
+	scripts/build-sdk.sh universal
+
+# Same, for this Mac's processor only.
+sdk-native:
+	scripts/build-sdk.sh native
 
 # Build and run Ring against the minimal SDK from `make sdk` instead of the prebuilt one.
 small:
@@ -30,7 +35,7 @@ small:
 	    -e '/    exactVersion: 5.5.41/d' project.yml > project-small.yml
 	xcodegen generate --spec project-small.yml
 	xcodebuild -project Ring.xcodeproj -scheme Ring -configuration Release \
-		-derivedDataPath build -destination 'platform=macOS' build
+		-derivedDataPath build -destination 'generic/platform=macOS' build
 	open build/Build/Products/Release/Ring.app
 
 # Size of the built app and its biggest parts.

@@ -28,8 +28,8 @@ You need Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew 
 make run        # generates Ring.xcodeproj, builds Release, launches the app
 ```
 
-Builds are for **this Mac's processor only** (Intel or Apple Silicon), to keep the app small.
-For a build that runs on both, use `make universal`. `make size` shows what takes the space.
+Builds are **universal** (Intel and Apple Silicon). `make native` builds for this Mac's processor
+only, about half the size. `make size` shows what takes the space.
 
 Or run `make project` and open `Ring.xcodeproj` in Xcode. Swift Package Manager downloads the
 linphone SDK (`linphonesw`, pinned to 5.5.41) and PhoneNumberKit (4.3.0) on the first build.
@@ -37,7 +37,8 @@ linphone SDK (`linphonesw`, pinned to 5.5.41) and PhoneNumberKit (4.3.0) on the 
 ### Smallest build (minimal SDK from source)
 
 The prebuilt linphone SDK includes video, a noise-suppression neural network, group chat and
-more, which Ring doesn't use. To build a minimal SDK (audio only, this Mac's architecture):
+more, which Ring doesn't use. To build a minimal SDK (audio only, universal; `make sdk-native`
+for this Mac's processor only):
 
 ```bash
 brew install cmake ninja doxygen yasm nasm
