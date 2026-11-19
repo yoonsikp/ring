@@ -278,7 +278,10 @@ final class SIPManager: ObservableObject {
                 params.mediaEncryption = .SRTP
                 params.videoEnabled = false
                 if let call = self.core.inviteAddressWithParams(addr: addr, params: params) {
-                    if self.trackedCall == nil { self.trackedCall = call } // usually already set by OutgoingInit
+                    // Usually already set by the OutgoingInit callback; don't adopt a call that already died.
+                    if self.trackedCall == nil, ![.Error, .End, .Released].contains(call.state) {
+                        self.trackedCall = call
+                    }
                 } else {
                     self.lastError = "Call could not be started"
                 }
