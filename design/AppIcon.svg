@@ -31,13 +31,16 @@
     <filter id="iconShadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.30"/>
     </filter>
-    <!-- white outline around the handset (separates it from the globe), then a soft shadow -->
-    <filter id="hsShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feMorphology in="SourceAlpha" operator="dilate" radius="11" result="grown"/>
-      <feFlood flood-color="#fff"/>
-      <feComposite in2="grown" operator="in" result="outline"/>
-      <feMerge result="outlined"><feMergeNode in="outline"/><feMergeNode in="SourceGraphic"/></feMerge>
-      <feDropShadow in="outlined" dx="0" dy="8" stdDeviation="7" flood-color="#0A1F4D" flood-opacity="0.30"/>
+    <!-- soft glow behind the handset (blends it into the globe), then a gentle shadow -->
+    <filter id="hsShadow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="16" result="blur"/>
+      <feFlood flood-color="#E0F7FF" flood-opacity="0.75"/>
+      <feComposite in2="blur" operator="in" result="glow"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="sblur"/>
+      <feOffset in="sblur" dy="7" result="soff"/>
+      <feFlood flood-color="#0A1F4D" flood-opacity="0.30"/>
+      <feComposite in2="soff" operator="in" result="shadow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="globeShadow" x="-30%" y="-30%" width="160%" height="160%">
       <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#081A40" flood-opacity="0.22"/>
