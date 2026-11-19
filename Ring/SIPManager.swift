@@ -256,7 +256,10 @@ final class SIPManager: ObservableObject {
 
     // MARK: - Calls
 
-    private var currentCall: Call? { core.currentCall ?? core.calls.first }
+    /// The one call the UI is showing. Events from any other call (an old call's late
+    /// Released, or a second INVITE auto-rejected as busy) must not change the UI.
+    private var trackedCall: Call?
+    private var currentCall: Call? { trackedCall }
 
     func dial(_ input: String) {
         let target = input.trimmingCharacters(in: .whitespaces)
@@ -274,7 +277,9 @@ final class SIPManager: ObservableObject {
                 let params = try self.core.createCallParams(call: nil)
                 params.mediaEncryption = .SRTP
                 params.videoEnabled = false
-                if self.core.inviteAddressWithParams(addr: addr, params: params) == nil {
+                if let call = self.core.inviteAddressWithParams(addr: addr, params: params) {
+                    if self.trackedCall == nil { self.trackedCall = call } // usually already set by OutgoingInit
+                } else {
                     self.lastError = "Call could not be started"
                 }
             } catch {
@@ -316,6 +321,13 @@ final class SIPManager: ObservableObject {
     }
 
     private func handleCall(_ call: Call, state: Call.State, message: String) {
+        // Adopt a new call only when none is being shown; otherwise ignore other calls.
+        if trackedCall == nil, callPhase == .idle,
+           [.IncomingReceived, .IncomingEarlyMedia, .OutgoingInit, .OutgoingProgress].contains(state) {
+            trackedCall = call
+        }
+        guard let tracked = trackedCall, call === tracked else { return }
+
         let remote = call.remoteAddress.map(Self.displayName) ?? "Unknown"
         switch state {
         case .IncomingReceived, .IncomingEarlyMedia:
@@ -342,6 +354,7 @@ final class SIPManager: ObservableObject {
     }
 
     private func endCall() {
+        trackedCall = nil // its later Released (or anything else) is ignored
         callPhase = .idle
         if isMuted { isMuted = false; core.micEnabled = true }
     }
