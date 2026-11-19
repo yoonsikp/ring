@@ -267,6 +267,7 @@ private struct AccountView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Account Settings").font(.headline)
+            Divider()
 
             field("SIP address", "sip:alice@example.com", $draft.sipAddress)
             VStack(alignment: .leading, spacing: 3) {
@@ -288,6 +289,7 @@ private struct AccountView: View {
                     .onTapGesture { withAnimation { showAdvanced.toggle() } }
             }
 
+            Divider()
             HStack {
                 if sip.settings.isComplete {
                     Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
@@ -329,6 +331,7 @@ private struct SettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Audio Settings").font(.headline)
+            Divider()
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
@@ -375,6 +378,7 @@ private struct SettingsView: View {
                                              : "Changes apply from the next call.")
                 .font(.caption).foregroundStyle(draft.enabledCodecs.isEmpty ? Color.orange : Color.secondary)
 
+            Divider()
             HStack {
                 Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
                 Spacer()
@@ -408,6 +412,7 @@ private struct NetworkView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Network Settings").font(.headline)
+            Divider()
 
             Toggle("Enable IPv6", isOn: $draft.ipv6)
 
@@ -432,6 +437,7 @@ private struct NetworkView: View {
                 }
             }
 
+            Divider()
             HStack {
                 Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
                 Spacer()
