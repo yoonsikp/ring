@@ -273,24 +273,7 @@ private struct SettingsView: View {
             Text("Needed on speakers. Turn off with headphones: it can make the other side choppy or delayed.")
                 .font(.caption).foregroundStyle(.secondary)
 
-            Divider()
-
-            Text("Codecs").font(.subheadline.weight(.semibold))
-            ForEach(Codec.allCases) { codec in
-                Toggle(codec.label, isOn: Binding(
-                    get: { draft.enabledCodecs.contains(codec) },
-                    set: { on in
-                        if on { draft.enabledCodecs.insert(codec) } else { draft.enabledCodecs.remove(codec) }
-                    }))
-            }
-            Text(draft.enabledCodecs.isEmpty ? "Enable at least one codec."
-                                             : "All other codecs are disabled. Changes apply from the next call.")
-                .font(.caption).foregroundStyle(draft.enabledCodecs.isEmpty ? Color.orange : Color.secondary)
-
-            Divider()
-
-            Text("Jitter buffer").font(.subheadline.weight(.semibold))
-            Toggle("Adaptive", isOn: $draft.adaptiveJitterBuffer)
+            Toggle("Adaptive buffer", isOn: $draft.adaptiveJitterBuffer)
             if !draft.adaptiveJitterBuffer {
                 Stepper(value: $draft.jitterBufferMs, in: AudioSettings.jitterBufferRange, step: 10) {
                     HStack(spacing: 4) {
@@ -306,6 +289,20 @@ private struct SettingsView: View {
                  ? "Grows and shrinks with network conditions."
                  : "Constant delay. Lower = less lag; too low causes dropouts on a jittery network.")
                 .font(.caption).foregroundStyle(.secondary)
+
+            Divider()
+
+            Text("Codecs").font(.subheadline.weight(.semibold))
+            ForEach(Codec.allCases) { codec in
+                Toggle(codec.label, isOn: Binding(
+                    get: { draft.enabledCodecs.contains(codec) },
+                    set: { on in
+                        if on { draft.enabledCodecs.insert(codec) } else { draft.enabledCodecs.remove(codec) }
+                    }))
+            }
+            Text(draft.enabledCodecs.isEmpty ? "Enable at least one codec."
+                                             : "Changes apply from the next call.")
+                .font(.caption).foregroundStyle(draft.enabledCodecs.isEmpty ? Color.orange : Color.secondary)
 
             HStack {
                 Button("Cancel", action: onDone).keyboardShortcut(.cancelAction)
