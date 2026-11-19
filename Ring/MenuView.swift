@@ -93,6 +93,7 @@ private struct StatusHeader: View {
     @EnvironmentObject private var sip: SIPManager
 
     private var dotColor: Color {
+        if !sip.networkReachable && sip.wantsConnection { return .red }
         switch sip.registration {
         case .connected: return .green
         case .connecting: return .yellow
@@ -176,6 +177,10 @@ private struct CallSection: View {
                         Text(Self.format(ctx.date.timeIntervalSince(since)))
                             .monospacedDigit().foregroundStyle(.secondary)
                     }
+                }
+                if !sip.networkReachable {
+                    Label("Network lost — trying to reconnect…", systemImage: "wifi.exclamationmark")
+                        .font(.caption).foregroundStyle(Color.mutedText)
                 }
                 HangUpButton()
                 HStack {

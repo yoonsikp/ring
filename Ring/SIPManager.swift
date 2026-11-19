@@ -24,6 +24,11 @@ final class SIPManager: ObservableObject {
     @Published private(set) var audio = AudioSettings.load()
     /// User intent: whether we *want* to be registered (the menu's Connect/Disconnect toggle).
     @Published private(set) var wantsConnection = true
+    /// liblinphone's own network monitoring (it closes connections when the network goes and
+    /// reconnects / re-registers by itself when it comes back).
+    @Published private(set) var networkReachable = true
+    /// Account changes (disconnect switch, new settings) wait until the current call has ended.
+    private var accountApplyPending = false
 
     private var core: Core!
     private var delegate: CoreDelegateStub!
@@ -92,6 +97,9 @@ final class SIPManager: ObservableObject {
             onCallStateChanged: { [weak self] _, call, state, message in
                 MainActor.assumeIsolated { self?.handleCall(call, state: state, message: message) }
             },
+            onNetworkReachable: { [weak self] _, reachable in
+                MainActor.assumeIsolated { self?.networkReachable = reachable }
+            },
             onAccountRegistrationStateChanged: { [weak self] _, account, state, message in
                 MainActor.assumeIsolated { self?.handleRegistration(account, state: state, message: message) }
             }
@@ -137,8 +145,15 @@ final class SIPManager: ObservableObject {
     }
 
     func shutdown() {
-        try? core.terminateAllCalls()
-        core.stop()
+        // Hang up gracefully: give liblinphone a moment to actually send the BYE before stopping.
+        if !core.calls.isEmpty {
+            try? core.terminateAllCalls()
+            for _ in 0..<25 { // up to ~0.5 s
+                core.iterate()
+                Thread.sleep(forTimeInterval: 0.02)
+            }
+        }
+        core.stop() // also unregisters
         iterateTimer?.invalidate()
         if let activity { ProcessInfo.processInfo.endActivity(activity) }
     }
@@ -149,7 +164,12 @@ final class SIPManager: ObservableObject {
         new.save()
         let changed = new != settings
         settings = new
-        if changed { applyAccount() } // only re-register if the account actually changed
+        guard changed else { return } // only re-register if the account actually changed
+        if trackedCall != nil {
+            accountApplyPending = true // re-register once the current call ends
+        } else {
+            applyAccount()
+        }
     }
 
     /// Audio preferences never touch the registration; they apply from the next call.
@@ -197,6 +217,23 @@ final class SIPManager: ObservableObject {
 
     func setConnected(_ on: Bool) {
         wantsConnection = on
+        if !on, trackedCall != nil {
+            // Disconnecting during a call: hang up first (BYE/decline), unregister after it ends.
+            accountApplyPending = true
+            hangUp()
+            // Fallback in case the call never reports ending.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.applyPendingAccount()
+            }
+            return
+        }
+        accountApplyPending = false
+        applyAccount()
+    }
+
+    private func applyPendingAccount() {
+        guard accountApplyPending else { return }
+        accountApplyPending = false
         applyAccount()
     }
 
@@ -243,12 +280,28 @@ final class SIPManager: ObservableObject {
         }
     }
 
+    /// Turn liblinphone's registration error into something readable.
+    private static func registrationFailure(_ info: ErrorInfo?, message: String) -> String {
+        let code = info?.protocolCode ?? 0
+        switch (code, info?.reason ?? .None) {
+        case (401, _), (403, _), (407, _), (_, .Unauthorized), (_, .Forbidden):
+            return "Wrong username or password"
+        case (408, _), (503, _), (_, .IOError), (_, .NoResponse), (_, .ServerTimeout):
+            return "Can't reach the server"
+        case (404, _), (_, .NotFound):
+            return "Account not found on the server"
+        default:
+            if let phrase = info?.phrase, !phrase.isEmpty { return phrase }
+            return message.isEmpty ? "Registration failed" : message
+        }
+    }
+
     private func handleRegistration(_ account: Account, state: RegistrationState, message: String) {
         guard let active = activeAccount, account === active else { return }
         switch state {
         case .Ok: registration = .connected
         case .Progress: registration = .connecting
-        case .Failed: registration = .failed(message.isEmpty ? "Registration failed" : message)
+        case .Failed: registration = .failed(Self.registrationFailure(account.errorInfo, message: message))
         case .Cleared, .None: registration = .disconnected
         default: break // e.g. Refreshing: keep current state
         }
@@ -342,6 +395,12 @@ final class SIPManager: ObservableObject {
             lastError = nil
             if case .active = callPhase { break }
             callPhase = .active(remote: remote, since: Date())
+        case .Error where Self.isNetworkFailure(call):
+            lastError = "Call dropped: network problem"
+            endCall()
+        case .End where Self.isNetworkFailure(call):
+            lastError = "Call dropped: network problem"
+            endCall()
         case .Error:
             if call.dir == .Incoming {
                 lastError = "Incoming call from \(remote) failed: \(message.isEmpty ? "unknown reason" : message)"
@@ -356,8 +415,21 @@ final class SIPManager: ObservableObject {
         }
     }
 
+    /// liblinphone ends a call with an I/O-type reason when the network failed, including when
+    /// no audio arrived for `nortpTimeout` seconds (30 s by default).
+    private static func isNetworkFailure(_ call: Call) -> Bool {
+        let reason = call.errorInfo?.reason ?? call.reason
+        return [.IOError, .NoResponse, .ServerTimeout].contains(reason)
+    }
+
     private func endCall() {
         trackedCall = nil // its later Released (or anything else) is ignored
+        if accountApplyPending {
+            // Let the BYE / its 200 OK go out before tearing down the account.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.applyPendingAccount()
+            }
+        }
         callPhase = .idle
         if isMuted { isMuted = false; core.micEnabled = true }
     }

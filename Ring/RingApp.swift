@@ -76,11 +76,12 @@ extension SIPManager {
     }
 
     var statusText: String {
+        if !networkReachable && wantsConnection && settings.isComplete { return "No network" }
         switch registration {
         case .connected: return "Connected"
         case .connecting: return "Connecting…"
         case .disconnected: return settings.isComplete ? "Disconnected" : "Not configured"
-        case .failed(let why): return "Failed: \(why)"
+        case .failed(let why): return why
         }
     }
 }
