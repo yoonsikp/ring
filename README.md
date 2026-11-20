@@ -16,3 +16,5 @@ which handles SIP, TLS, SRTP and audio.
 - Connect/disconnect switch in the popover
 
 Requires macOS 13+.
+
+See `BUILD.md` or download from releases.
