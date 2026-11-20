@@ -12,6 +12,4 @@ A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinpho
   only G.711 (PCMU/PCMA), G.722 and GSM can be enabled
 - Connect/disconnect switch in the popover
 
-Requires macOS 13+.
-
-See `BUILD.md` or download from releases.
+Requires macOS 13+. See `BUILD.md` or download from releases.
