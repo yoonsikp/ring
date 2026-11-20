@@ -163,6 +163,7 @@ private struct CallSection: View {
                         if !target.isEmpty {
                             Button {
                                 target = ""
+                                sip.clearError() // the error was about the number just cleared
                                 focusRequest += 1 // keep typing straight away
                             } label: {
                                 Image(systemName: "xmark.circle.fill")

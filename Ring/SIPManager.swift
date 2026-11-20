@@ -508,6 +508,11 @@ final class SIPManager: ObservableObject {
         }
     }
 
+    /// Dismiss the error shown under the number field (e.g. when the field is cleared).
+    func clearError() {
+        lastError = nil
+    }
+
     /// While a call is ringing and the popover is closed, the menu bar icon is a green
     /// "answer" button; opening the popover by clicking it answers the call.
     func popoverVisibilityChanged(_ open: Bool) {

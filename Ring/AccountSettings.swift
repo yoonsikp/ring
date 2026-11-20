@@ -16,7 +16,7 @@ struct AccountSettings: Equatable {
     var phoneRegion: String = ""
     /// Menu bar icon: true = macOS draws the SF Symbol (crisp, width varies by state);
     /// false = Ring draws it on a fixed-width canvas. Display only.
-    var systemMenuBarIcon: Bool = false
+    var systemMenuBarIcon: Bool = true
 
     var isComplete: Bool { !sipAddress.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
 
@@ -41,7 +41,7 @@ struct AccountSettings: Equatable {
         s.server = d.string(forKey: Key.server) ?? ""
         s.useTLS = d.object(forKey: Key.useTLS) as? Bool ?? true
         s.phoneRegion = d.string(forKey: Key.phoneRegion) ?? ""
-        s.systemMenuBarIcon = d.bool(forKey: Key.systemMenuBarIcon)
+        s.systemMenuBarIcon = d.object(forKey: Key.systemMenuBarIcon) as? Bool ?? true
         s.password = Keychain.read() ?? ""
         return s
     }

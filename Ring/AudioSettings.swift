@@ -31,7 +31,7 @@ struct AudioSettings: Equatable {
     var enabledCodecs: Set<Codec> = Set(Codec.allCases)
     /// Adaptive jitter buffer. Off by default: a fixed buffer of `jitterBufferMs` is used.
     var adaptiveJitterBuffer = false
-    var jitterBufferMs = 90
+    var jitterBufferMs = 60
     /// Extra gain on incoming audio, in dB (plain amplification, not compression).
     var speakerBoostDb = 3
 
