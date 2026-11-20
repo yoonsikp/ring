@@ -525,28 +525,25 @@ final class SIPManager: ObservableObject {
         openPopoverForLink()
     }
 
-    /// Opens the popover for a call link. After handing over the link, the browser usually takes
-    /// focus back, and macOS closes a menu bar popover when another app becomes active. So wait
-    /// a moment before clicking the status item, keep watching for a few seconds, and if the
-    /// popover gets closed, reopen it once. Only clicks while the window is really not shown,
-    /// since a click on an open popover would close it.
-    private func openPopoverForLink(waits: Int = 0, clicks: Int = 0, checks: Int = 0,
-                                    delay: TimeInterval = 1.0) {
+    /// Opens the popover for a call link (only called when it was closed). After handing over the
+    /// link, the browser usually takes focus back, and macOS closes a menu bar popover when
+    /// another app becomes active. So wait a moment before clicking the status item, and if the
+    /// popover didn't stay open after that click, reopen it once. As soon as it's seen open, stop:
+    /// closing it yourself afterwards is left alone.
+    private func openPopoverForLink(waits: Int = 0, clicks: Int = 0, delay: TimeInterval = 1.0) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
-            if MenuBarPopover.isShown {
-                if checks < 3 { self.openPopoverForLink(waits: waits, clicks: clicks, checks: checks + 1, delay: 0.8) }
-                return
-            }
-            guard clicks < 2 else { return } // the first open plus one reopen
+            if MenuBarPopover.isShown { return } // it's open: done
+            guard clicks < 2 else { return }      // the first open plus one reopen
             guard let button = MenuBarPopover.statusItemButton() else {
                 // The link may have launched Ring; the status item can take a moment to appear.
-                if waits < 10 { self.openPopoverForLink(waits: waits + 1, clicks: clicks, checks: checks, delay: 0.25) }
+                if waits < 10 { self.openPopoverForLink(waits: waits + 1, clicks: clicks, delay: 0.25) }
                 return
             }
             NSApp.activate(ignoringOtherApps: true)
             button.performClick(nil)
-            if checks < 3 { self.openPopoverForLink(waits: waits, clicks: clicks + 1, checks: checks + 1, delay: 0.8) }
+            // Check once whether it stayed open; reopen if it didn't.
+            if clicks == 0 { self.openPopoverForLink(waits: waits, clicks: 1, delay: 0.8) }
         }
     }
 
