@@ -525,22 +525,30 @@ final class SIPManager: ObservableObject {
         openPopoverForLink()
     }
 
-    /// Clicks the status item once it exists (it may not yet if the link launched Ring). If the
-    /// popover still isn't open a moment later, tries one more click.
-    private func openPopoverForLink(waits: Int = 0, retried: Bool = false) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            guard let self, !self.popoverOpen, !MenuBarPopover.isShown else { return }
+    /// Opens the popover for a call link. After handing over the link, the browser usually takes
+    /// focus back, and macOS closes a menu bar popover when another app becomes active. So wait
+    /// a moment before clicking the status item, and if the popover gets closed again shortly
+    /// after, reopen it (up to two more times). Only clicks while the window is really not shown,
+    /// since a click on an open popover would close it.
+    private func openPopoverForLink(waits: Int = 0, reopens: Int = 0, delay: TimeInterval = 0.7) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self else { return }
+            if MenuBarPopover.isShown {
+                // Open: check again shortly in case the browser's focus change closes it.
+                if reopens < 2 {
+                    self.openPopoverForLink(waits: waits, reopens: reopens + 1, delay: 0.7)
+                }
+                return
+            }
             guard let button = MenuBarPopover.statusItemButton() else {
-                if waits < 8 { self.openPopoverForLink(waits: waits + 1, retried: retried) } // ~2 s
+                // The link may have launched Ring; the status item can take a moment to appear.
+                if waits < 10 { self.openPopoverForLink(waits: waits + 1, reopens: reopens, delay: 0.25) }
                 return
             }
             NSApp.activate(ignoringOtherApps: true)
             button.performClick(nil)
-            guard !retried else { return }
-            // Only retry if the popover window really isn't up (a second click would close it).
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-                guard let self, !self.popoverOpen, !MenuBarPopover.isShown else { return }
-                self.openPopoverForLink(waits: waits, retried: true)
+            if reopens < 2 {
+                self.openPopoverForLink(waits: waits, reopens: reopens + 1, delay: 0.7)
             }
         }
     }
