@@ -510,6 +510,8 @@ final class SIPManager: ObservableObject {
     // MARK: - Call links
 
     static let callLinkSchemes = ["tel", "sip", "sips", "callto"]
+    /// When Ring started; a call link arriving within a few seconds of this launched Ring.
+    private let launchedAt = Date()
 
     /// A clicked call link fills the number field and opens the popover; the user presses Call.
     /// (Never dials by itself, so a stray click can't place a call.)
@@ -518,14 +520,18 @@ final class SIPManager: ObservableObject {
         dialTarget = target
         lastError = nil
         guard !popoverOpen, !MenuBarPopover.isShown else { return }
-        // The link comes from another app (e.g. a browser), so bring Ring forward first, then
-        // click its menu bar icon a moment later; clicking straight away, while the other app is
-        // still active, didn't open the popover.
-        NSApp.activate(ignoringOtherApps: true)
-        openPopoverForLink()
+        if Date().timeIntervalSince(launchedAt) < 5 {
+            // The link launched Ring: it's still starting up, and the browser takes focus back
+            // meanwhile, so open the popover patiently (delay, then reopen once if needed).
+            NSApp.activate(ignoringOtherApps: true)
+            openPopoverForLink()
+        } else {
+            // Ring was already running: just open the popover.
+            MenuBarPopover.statusItemButton()?.performClick(nil)
+        }
     }
 
-    /// Opens the popover for a call link (only called when it was closed). After handing over the
+    /// Opens the popover for a call link that launched Ring. After handing over the
     /// link, the browser usually takes focus back, and macOS closes a menu bar popover when
     /// another app becomes active. So wait a moment before clicking the status item, and if the
     /// popover didn't stay open after that click, reopen it once. As soon as it's seen open, stop:
