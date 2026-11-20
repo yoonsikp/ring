@@ -14,9 +14,6 @@ struct AccountSettings: Equatable {
     /// Country for formatting phone numbers (two-letter code), "" = automatic from the Mac's region.
     /// Display only: changing it doesn't affect the SIP registration.
     var phoneRegion: String = ""
-    /// Menu bar icon: true = macOS draws the SF Symbol (crisp, width varies by state);
-    /// false = Ring draws it on a fixed-width canvas. Display only.
-    var systemMenuBarIcon: Bool = true
 
     var isComplete: Bool { !sipAddress.trimmingCharacters(in: .whitespaces).isEmpty && !password.isEmpty }
 
@@ -30,7 +27,7 @@ struct AccountSettings: Equatable {
     private enum Key {
         static let sipAddress = "sipAddress", username = "username", server = "server", useTLS = "useTLS"
         static let phoneRegion = "phoneRegion"
-        static let systemMenuBarIcon = "systemMenuBarIcon"
+
     }
 
     static func load() -> AccountSettings {
@@ -41,7 +38,6 @@ struct AccountSettings: Equatable {
         s.server = d.string(forKey: Key.server) ?? ""
         s.useTLS = d.object(forKey: Key.useTLS) as? Bool ?? true
         s.phoneRegion = d.string(forKey: Key.phoneRegion) ?? ""
-        s.systemMenuBarIcon = d.object(forKey: Key.systemMenuBarIcon) as? Bool ?? true
         s.password = Keychain.read() ?? ""
         return s
     }
@@ -53,7 +49,7 @@ struct AccountSettings: Equatable {
         d.set(server, forKey: Key.server)
         d.set(useTLS, forKey: Key.useTLS)
         d.set(phoneRegion, forKey: Key.phoneRegion)
-        d.set(systemMenuBarIcon, forKey: Key.systemMenuBarIcon)
+        d.removeObject(forKey: "systemMenuBarIcon") // setting removed; always system-drawn
         if password.isEmpty { Keychain.delete() } else { Keychain.write(password) }
     }
 }

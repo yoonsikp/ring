@@ -221,7 +221,6 @@ final class SIPManager: ObservableObject {
         // The phone-number country is display-only; it doesn't need a re-registration.
         var old = settings, cmp = new
         old.phoneRegion = ""; cmp.phoneRegion = ""
-        old.systemMenuBarIcon = false; cmp.systemMenuBarIcon = false
         let changed = cmp != old
         settings = new
         guard changed else { return } // only re-register if the account actually changed

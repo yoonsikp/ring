@@ -29,10 +29,8 @@ private struct StatusIcon: View {
                 Image(nsImage: Self.answerButton)
             } else if let elapsed = clock.elapsed {
                 Image(nsImage: Self.image(for: sip.statusSymbol, time: formatCallDuration(elapsed)))
-            } else if sip.settings.systemMenuBarIcon {
-                Image(systemName: sip.statusSymbol) // macOS draws it: crisp, width varies by state
             } else {
-                Image(nsImage: Self.image(for: sip.statusSymbol)) // fixed-width canvas
+                Image(systemName: sip.statusSymbol) // drawn by macOS (crisp)
             }
         }
         .accessibilityLabel(sip.showsAnswerButton ? "Answer incoming call" : sip.statusText)

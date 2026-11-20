@@ -332,7 +332,6 @@ private struct AccountView: View {
                     field("Username (optional)", "Defaults to the user part of the address", $draft.username)
                     field("Server (optional)", "host[:port], defaults to the address's domain", $draft.server)
                     Toggle("Use TLS Signalling", isOn: $draft.useTLS)
-                    Toggle("System-drawn menu bar icon", isOn: $draft.systemMenuBarIcon)
                 }
                 .padding(.top, 6)
             } label: {
