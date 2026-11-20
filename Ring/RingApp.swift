@@ -48,7 +48,7 @@ private struct StatusIcon: View {
         let size = NSSize(width: canvas.width * 2 + 4, height: 18)
         let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
             .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
-        let symbol = NSImage(systemSymbolName: "phone.fill", accessibilityDescription: nil)?
+        let symbol = NSImage(systemSymbolName: "phone.arrow.down.left.fill", accessibilityDescription: nil)?
             .withSymbolConfiguration(config)
         let image = NSImage(size: size, flipped: false) { rect in
             NSColor.systemGreen.setFill()
