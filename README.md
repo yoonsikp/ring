@@ -3,8 +3,8 @@
 A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinphone](https://gitlab.linphone.org/BC/public/linphone-sdk).
 
 - SRTP is **mandatory**: calls that can't use SRTP fail.
-- Settings: SIP address, password (Keychain), optional username, optional server, TLS on/off
 - Menu-bar icon shows arrows for incoming/outgoing calls - timer during a call
+- Settings: SIP address, password (Keychain), optional username, optional server, TLS on/off
 - In a call: mute, DTMF keypad (click, or type 0-9 * #), hang up
 - Phone numbers are formatted using [PhoneNumberKit](https://github.com/marmelroy/PhoneNumberKit), based on your Mac's region or chosen under Account.
 - Network: Enable IPv6 (default on), STUN/TURN server, ICE, TURN with username + password (Keychain)
