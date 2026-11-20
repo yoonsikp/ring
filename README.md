@@ -11,5 +11,6 @@ A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinpho
 - Audio: echo cancellation, adaptive or fixed-size buffer, volume gain (0 to +6 dB, applied live), and codecs —
   only G.711 (PCMU/PCMA), G.722 and GSM can be enabled
 - Connect/disconnect switch in the popover
+- Incoming call notification through macOS - Accept/Decline
 
 Requires macOS 13+. See `BUILD.md` or download from releases.
