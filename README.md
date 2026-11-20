@@ -1,7 +1,6 @@
 # Ring
 
-A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinphone](https://gitlab.linphone.org/BC/public/linphone-sdk),
-which handles SIP, TLS, SRTP and audio.
+A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinphone](https://gitlab.linphone.org/BC/public/linphone-sdk).
 
 - SRTP is **mandatory**: calls that can't use SRTP fail.
 - Settings: SIP address, password (Keychain), optional username, optional server, TLS on/off
