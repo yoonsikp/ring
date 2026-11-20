@@ -517,8 +517,30 @@ final class SIPManager: ObservableObject {
         guard let target = Self.callLinkTarget(url), !target.isEmpty else { return }
         dialTarget = target
         lastError = nil
-        if !popoverOpen {
-            MenuBarPopover.statusItemButton()?.performClick(nil)
+        guard !popoverOpen else { return }
+        // The link comes from another app (e.g. a browser), so bring Ring forward first, then
+        // click its menu bar icon a moment later; clicking straight away, while the other app is
+        // still active, didn't open the popover.
+        NSApp.activate(ignoringOtherApps: true)
+        openPopoverForLink()
+    }
+
+    /// Clicks the status item once it exists (it may not yet if the link launched Ring). If the
+    /// popover still isn't open a moment later, tries one more click.
+    private func openPopoverForLink(waits: Int = 0, retried: Bool = false) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            guard let self, !self.popoverOpen else { return }
+            guard let button = MenuBarPopover.statusItemButton() else {
+                if waits < 8 { self.openPopoverForLink(waits: waits + 1, retried: retried) } // ~2 s
+                return
+            }
+            NSApp.activate(ignoringOtherApps: true)
+            button.performClick(nil)
+            guard !retried else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self, !self.popoverOpen else { return }
+                self.openPopoverForLink(waits: waits, retried: true)
+            }
         }
     }
 
