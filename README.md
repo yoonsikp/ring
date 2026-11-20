@@ -14,3 +14,5 @@ A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinpho
 - Incoming call notification through macOS - Accept/Decline
 
 Requires macOS 13+. See `BUILD.md` or download from releases.
+
+![Screenshot Description](screenshot.png)
