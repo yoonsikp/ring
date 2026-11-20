@@ -527,29 +527,26 @@ final class SIPManager: ObservableObject {
 
     /// Opens the popover for a call link. After handing over the link, the browser usually takes
     /// focus back, and macOS closes a menu bar popover when another app becomes active. So wait
-    /// a moment before clicking the status item, and if the popover gets closed again shortly
-    /// after, reopen it (up to three more times, over roughly 3.5 s). Only clicks while the window is really not shown,
+    /// a moment before clicking the status item, keep watching for a few seconds, and if the
+    /// popover gets closed, reopen it once. Only clicks while the window is really not shown,
     /// since a click on an open popover would close it.
-    private func openPopoverForLink(waits: Int = 0, reopens: Int = 0, delay: TimeInterval = 1.0) {
+    private func openPopoverForLink(waits: Int = 0, clicks: Int = 0, checks: Int = 0,
+                                    delay: TimeInterval = 1.0) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             if MenuBarPopover.isShown {
-                // Open: check again shortly in case the browser's focus change closes it.
-                if reopens < 3 {
-                    self.openPopoverForLink(waits: waits, reopens: reopens + 1, delay: 0.8)
-                }
+                if checks < 3 { self.openPopoverForLink(waits: waits, clicks: clicks, checks: checks + 1, delay: 0.8) }
                 return
             }
+            guard clicks < 2 else { return } // the first open plus one reopen
             guard let button = MenuBarPopover.statusItemButton() else {
                 // The link may have launched Ring; the status item can take a moment to appear.
-                if waits < 10 { self.openPopoverForLink(waits: waits + 1, reopens: reopens, delay: 0.25) }
+                if waits < 10 { self.openPopoverForLink(waits: waits + 1, clicks: clicks, checks: checks, delay: 0.25) }
                 return
             }
             NSApp.activate(ignoringOtherApps: true)
             button.performClick(nil)
-            if reopens < 3 {
-                self.openPopoverForLink(waits: waits, reopens: reopens + 1, delay: 0.8)
-            }
+            if checks < 3 { self.openPopoverForLink(waits: waits, clicks: clicks + 1, checks: checks + 1, delay: 0.8) }
         }
     }
 
