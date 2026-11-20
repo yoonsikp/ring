@@ -12,6 +12,7 @@ A minimal macOS menu-bar SIP client (audio only) based on SwiftUI and [liblinpho
   only G.711 (PCMU/PCMA), G.722 and GSM can be enabled
 - Connect/disconnect switch in the popover
 - Incoming call notification through macOS - Accept/Decline
+- Opens `tel:` / `sip:` / `callto:` links: the number is filled in, press Call (Account › Advanced Options › Use Ring for phone links)
 
 Requires macOS 13+. Universal build. See `BUILD.md` or download from releases.
 

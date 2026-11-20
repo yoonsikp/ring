@@ -78,6 +78,12 @@ ad-hoc builds created that Keychain item); choose **Always Allow**, and it won't
    style from **Banners** to **Alerts**. Banners disappear after a few seconds and hide the
    Answer / Decline buttons behind *Options*; Alerts stay on screen until you act.
 
+## Phone links
+
+Ring can open `tel:`, `sip:`, `sips:` and `callto:` links (e.g. "Call" links on web pages). Click
+**Use Ring for phone links** under Account › Advanced Options once (macOS asks to confirm). A
+clicked link then fills in the number and opens Ring; press Call to dial.
+
 ## Incoming calls
 
 - A notification **Incoming call** appears with the caller, and **Answer** / **Decline** buttons;

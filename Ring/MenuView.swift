@@ -332,6 +332,7 @@ private struct AccountView: View {
                     field("Username (optional)", "Defaults to the user part of the address", $draft.username)
                     field("Server (optional)", "host[:port], defaults to the address's domain", $draft.server)
                     Toggle("Use TLS Signalling", isOn: $draft.useTLS)
+                    CallLinksRow()
                 }
                 .padding(.top, 6)
             } label: {
@@ -683,5 +684,34 @@ enum MenuBarPopover {
         } else {
             window?.close()
         }
+    }
+}
+
+// MARK: - Call links
+
+/// "Use Ring for phone links": makes Ring the default app for tel:/sip:/callto: links.
+private struct CallLinksRow: View {
+    @EnvironmentObject private var sip: SIPManager
+    @State private var isDefault = false
+    @State private var message: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if isDefault {
+                Label("Ring opens phone links", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            } else {
+                Button("Use Ring for phone links") {
+                    sip.makeDefaultForCallLinks { error in
+                        message = error
+                        isDefault = sip.isDefaultForCallLinks
+                    }
+                }
+            }
+            if let message {
+                Text(message).font(.caption).foregroundStyle(.red)
+            }
+        }
+        .onAppear { isDefault = sip.isDefaultForCallLinks }
     }
 }

@@ -25,6 +25,11 @@ targets:
         CFBundleDisplayName: Ring
         LSUIElement: true
         NSMicrophoneUsageDescription: Ring needs the microphone for voice calls.
+        # Call links (tel:, sip:, sips:, callto:) open in Ring when it's the default handler.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.yoonsikp.Ring.call
+            CFBundleTypeRole: Viewer
+            CFBundleURLSchemes: [tel, sip, sips, callto]
     entitlements:
       path: Ring/Ring.entitlements
       properties:

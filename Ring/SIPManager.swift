@@ -507,6 +507,60 @@ final class SIPManager: ObservableObject {
         }
     }
 
+    // MARK: - Call links
+
+    static let callLinkSchemes = ["tel", "sip", "sips", "callto"]
+
+    /// A clicked call link fills the number field and opens the popover; the user presses Call.
+    /// (Never dials by itself, so a stray click can't place a call.)
+    func handleCallLink(_ url: URL) {
+        guard let target = Self.callLinkTarget(url), !target.isEmpty else { return }
+        dialTarget = target
+        lastError = nil
+        if !popoverOpen {
+            MenuBarPopover.statusItemButton()?.performClick(nil)
+        }
+    }
+
+    /// tel:+1-431-334-7050 -> "(431) 334-7050"; sip:alice@example.com -> "sip:alice@example.com".
+    static func callLinkTarget(_ url: URL) -> String? {
+        guard let scheme = url.scheme?.lowercased(), callLinkSchemes.contains(scheme) else { return nil }
+        var rest = String(url.absoluteString.dropFirst(scheme.count + 1))
+        rest = rest.removingPercentEncoding ?? rest
+        if rest.hasPrefix("//") { rest.removeFirst(2) } // callto://…
+        if let semicolon = rest.firstIndex(of: ";") { rest = String(rest[..<semicolon]) } // ;ext=, ;phone-context=
+        if let question = rest.firstIndex(of: "?") { rest = String(rest[..<question]) }
+        rest = rest.trimmingCharacters(in: .whitespaces)
+        if PhoneFormat.looksLikeNumber(rest) {
+            return PhoneFormat.display(rest) ?? rest
+        }
+        // SIP addresses: keep the scheme so liblinphone treats it as an address.
+        return (scheme == "sip" || scheme == "sips") ? "\(scheme):\(rest)" : rest
+    }
+
+    /// Ask macOS to send call links to Ring (macOS asks the user to confirm).
+    func makeDefaultForCallLinks(_ done: @escaping @MainActor (String?) -> Void) {
+        let app = Bundle.main.bundleURL
+        Task { @MainActor in
+            var firstError: String?
+            for scheme in Self.callLinkSchemes {
+                do {
+                    try await NSWorkspace.shared.setDefaultApplication(at: app, toOpenURLsWithScheme: scheme)
+                } catch {
+                    if firstError == nil { firstError = error.localizedDescription }
+                }
+            }
+            done(firstError)
+        }
+    }
+
+    /// Whether Ring currently opens tel: links.
+    var isDefaultForCallLinks: Bool {
+        guard let url = URL(string: "tel:1"),
+              let handler = NSWorkspace.shared.urlForApplication(toOpen: url) else { return false }
+        return handler.standardizedFileURL == Bundle.main.bundleURL.standardizedFileURL
+    }
+
     /// Dismiss the error shown under the number field (e.g. when the field is cleared).
     func clearError() {
         lastError = nil

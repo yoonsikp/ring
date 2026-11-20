@@ -111,6 +111,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         sip.shutdown()
     }
+
+    /// tel:, sip:, sips: and callto: links (from a browser, Mail, …).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let url = urls.first else { return }
+        sip.handleCallLink(url)
+    }
 }
 
 extension SIPManager {
