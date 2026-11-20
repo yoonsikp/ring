@@ -112,7 +112,7 @@ targets:
               name=$(basename "$fw" .framework)
               find "$fw" -type f ! -path '*/_CodeSignature/*' | while read -r f; do
                 [ "$(basename "$f")" = "$name" ] && continue
-                file -b "$f" | grep -q 'Mach-O' && sign "$f"
+                if file -b "$f" | grep -q 'Mach-O'; then sign "$f"; fi
               done
             fi
             sign "$fw"
