@@ -4,7 +4,7 @@ A minimal macOS menu-bar SIP client (audio only). It's a small SwiftUI app on to
 [liblinphone](https://gitlab.linphone.org/BC/public/linphone-sdk) (the engine behind Linphone),
 which handles SIP, TLS, SRTP and audio.
 
-- Menu-bar icon shows the state: `phone.fill` connected · `phone` connecting · `phone.down` disconnected/failed
+- Menu-bar icon shows the state: `phone.fill` connected · `phone` (outline) connecting, disconnected or failed
   · arrows for incoming/outgoing calls · waveform during a call
 - One account, one call at a time (`maxCalls = 1`; a second incoming call gets *486 Busy*)
 - Settings: SIP address, username, password (stored in the Keychain), optional server, TLS on/off

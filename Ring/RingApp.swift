@@ -124,8 +124,9 @@ extension SIPManager {
         }
         switch registration {
         case .connected: return "phone.fill"
-        case .connecting: return "phone"
-        case .disconnected, .failed: return "phone.down"
+        // Not connected (connecting, disconnected, failed): outlined phone. Never the
+        // hung-up symbol in the menu bar.
+        case .connecting, .disconnected, .failed: return "phone"
         }
     }
 
