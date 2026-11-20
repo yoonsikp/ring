@@ -5,8 +5,7 @@ A minimal macOS menu-bar SIP client (audio only). It's a small SwiftUI app on to
 which handles SIP, TLS, SRTP and audio.
 
 - SRTP is **mandatory**: calls that can't use SRTP fail.
-- Settings: SIP address, password (stored in the Keychain)
-- Optional username, optional server, TLS on/off
+- Settings: SIP address, password (stored in the Keychain), optional username, optional server, TLS on/off
 - Menu-bar icon shows arrows for incoming/outgoing calls · waveform and timer during a call
 - Phone numbers are formatted for your country as you type and for callers,
   using [PhoneNumberKit](https://github.com/marmelroy/PhoneNumberKit). The country is
