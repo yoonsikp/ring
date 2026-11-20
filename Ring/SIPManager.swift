@@ -549,7 +549,7 @@ final class SIPManager: ObservableObject {
             NSApp.activate(ignoringOtherApps: true)
             button.performClick(nil)
             // Check once whether it stayed open; reopen if it didn't.
-            if clicks == 0 { self.openPopoverForLink(waits: waits, clicks: 1, delay: 0.1) }
+            if clicks == 0 { self.openPopoverForLink(waits: waits, clicks: 1, delay: 0.3) }
         }
     }
 
