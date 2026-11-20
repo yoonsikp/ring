@@ -676,6 +676,15 @@ enum MenuBarPopover {
         return nil
     }
 
+    /// Whether the popover window is on screen right now (checked directly; the popoverOpen flag
+    /// is updated from a notification that can lag behind when the popover first opens).
+    static var isShown: Bool {
+        NSApp.windows.contains { window in
+            window.isVisible && !window.className.contains("StatusBarWindow")
+                && window.occlusionState.contains(.visible)
+        }
+    }
+
     /// Close the popover the way a click on the icon does, so MenuBarExtra's own state (and
     /// the icon highlight) stays in sync. Closing the window directly leaves it out of sync.
     static func close(_ window: NSWindow?) {
